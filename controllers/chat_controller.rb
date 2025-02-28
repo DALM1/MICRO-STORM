@@ -39,6 +39,7 @@ class ChatController
       driver.text("Bannis : #{chat_room.banned_users.join(', ')}")
 
     when '/cr'
+      # /cr <nom> <pass>
       room_name = parts[1]
       room_pass = parts[2]
       if room_name.nil?
@@ -49,6 +50,7 @@ class ChatController
       driver.text("Thread #{room_name} créé.")
 
     when '/cd'
+      # /cd <nom> <pass>
       room_name = parts[1]
       room_pass = parts[2]
       if room_name.nil?
@@ -56,8 +58,10 @@ class ChatController
         return
       end
       if @chat_rooms.key?(room_name)
+        # Quitte la room actuelle
         chat_room.remove_client(username)
         new_room = @chat_rooms[room_name]
+        # Vérifie le password s'il y en a un
         if new_room.password.nil? || new_room.password == room_pass
           new_room.add_client(driver, username)
         else
@@ -68,6 +72,7 @@ class ChatController
       end
 
     when '/cpd'
+      # /cpd <password>
       new_password = parts[1]
       if chat_room.creator == username
         chat_room.password = new_password
@@ -101,6 +106,7 @@ class ChatController
       end
 
     when '/dm'
+      # /dm <pseudo> <message>
       user_to_dm = parts[1]
       dm_message = parts[2..-1].join(' ')
       if user_to_dm.nil? || dm_message.empty?
@@ -116,6 +122,9 @@ class ChatController
       chat_room.remove_client(username)
       driver.close
 
+    # -----------------------------
+    # Ajout commande /color <couleur>
+    # -----------------------------
     when '/color'
       new_color = parts[1]
       if new_color.nil?
@@ -125,6 +134,9 @@ class ChatController
       chat_room.set_color(username, new_color)
       driver.text("Votre couleur est maintenant #{new_color}")
 
+    # -----------------------------
+    # Ajout commande /background <url>
+    # -----------------------------
     when '/background'
       bg_url = parts[1]
       if bg_url.nil?

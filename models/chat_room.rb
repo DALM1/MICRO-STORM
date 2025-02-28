@@ -13,7 +13,7 @@ class ChatRoom
 
   def add_client(driver, username)
     if @banned_users.include?(username)
-      driver.text("⚠️ Vous êtes banni de ce thread")
+      driver.text("⚠️ Vous êtes banni de ce thread.")
       return
     end
     @clients[username] = driver
@@ -30,29 +30,32 @@ class ChatRoom
   def ban_user(username)
     remove_client(username)
     @banned_users << username
-    broadcast_message("#{username} a été banni", 'Server')
+    broadcast_message("#{username} a été banni.", 'Server')
   end
 
   def kick_user(username)
     remove_client(username)
-    broadcast_message("#{username} a été expulsé du thread", 'Server')
+    broadcast_message("#{username} a été expulsé du thread.", 'Server')
   end
 
   def direct_message(sender, recipient, message)
     if @clients.key?(recipient)
-      @clients[recipient].text("[DM de #{sender}] | #{message}")
+      @clients[recipient].text("[DM de #{sender}] : #{message}")
     else
-      @clients[sender].text("⚠️ L'utilisateur #{recipient} n'est pas dans ce thread")
+      @clients[sender].text("⚠️ L'utilisateur #{recipient} n'est pas dans ce thread.")
     end
   end
 
+  # Méthode pour setter la couleur
   def set_color(username, color)
     @client_colors[username] = color
   end
 
+  # Broadcast d'un message normal (avec couleur HTML du pseudo)
   def broadcast_message(message, sender)
     timestamp = Time.now.strftime('%Y-%m-%d %H:%M:%S')
     color = @client_colors[sender] || '#FFFFFF'
+    # On insère la couleur du pseudo via un span HTML
     formatted_message = "[#{timestamp}] <span style='color: #{color}'>#{sender}:</span> #{message}"
     @history << formatted_message
 
@@ -60,18 +63,20 @@ class ChatRoom
       begin
         driver.text(formatted_message)
       rescue IOError => e
-        puts "⚠️ #{e.message}".yellow
+        puts "⚠️ Erreur d'envoi de message : #{e.message}".yellow
       end
     end
   end
 
+  # Broadcast spécial pour changer le background
   def broadcast_background(url)
+    # On envoie un message particulier que le client va intercepter
     special_msg = "CHANGE_BG|#{url}"
     @clients.each_value do |driver|
       begin
         driver.text(special_msg)
       rescue IOError => e
-        puts "⚠️ #{e.message}".yellow
+        puts "⚠️ Erreur d'envoi de message : #{e.message}".yellow
       end
     end
   end
