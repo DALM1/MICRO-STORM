@@ -19,7 +19,7 @@ loop do
 
       driver.on(:connect) do
         if driver.env['HTTP_UPGRADE'].to_s.downcase != 'websocket'
-          puts "🔴 Requête invalide - Pas de WebSocket".red
+          puts "🔴 invalide".red
           socket.close
         else
           driver.start
@@ -27,7 +27,7 @@ loop do
       end
 
       driver.on(:open) do
-        puts "🟢 Connexion WebSocket ouverte".green
+        puts "🟢".green
         driver.text("Entrez votre pseudo ")
       end
 
@@ -40,7 +40,7 @@ loop do
         if username.nil?
           username = msg
           if username.empty?
-            driver.text("⚠️ Pseudo vide, réessayez.")
+            driver.text("⚠️ Pseudo vide, réessayez")
             next
           end
 
@@ -50,7 +50,7 @@ loop do
 
           current_room = chat_controller.chat_rooms["Main"]
           current_room.add_client(driver, username)
-          driver.text("Bienvenue #{username} Tapez /help pour la liste des commandes.")
+          driver.text("Bienvenue #{username} Tapez /help pour la liste des commandes")
           next
         end
 

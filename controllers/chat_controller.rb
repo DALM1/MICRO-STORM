@@ -30,7 +30,7 @@ class ChatController
       driver.text(chat_room.commands)
 
     when '/list'
-      driver.text("Utilisateurs dans ce thread : #{chat_room.list_users}")
+      driver.text("Utilisateurs dans ce thread | #{chat_room.list_users}")
 
     when '/history'
       chat_room.history.each { |line| driver.text(line) }
@@ -58,17 +58,15 @@ class ChatController
         return
       end
       if @chat_rooms.key?(room_name)
-        # Quitte la room actuelle
         chat_room.remove_client(username)
         new_room = @chat_rooms[room_name]
-        # Vérifie le password s'il y en a un
         if new_room.password.nil? || new_room.password == room_pass
           new_room.add_client(driver, username)
         else
           driver.text("⚠️ Mot de passe incorrect pour #{room_name}")
         end
       else
-        driver.text("⚠️ Le thread #{room_name} n'existe pas.")
+        driver.text("⚠️ Le thread #{room_name} n'existe pas")
       end
 
     when '/cpd'
@@ -76,9 +74,9 @@ class ChatController
       new_password = parts[1]
       if chat_room.creator == username
         chat_room.password = new_password
-        driver.text("Mot de passe du thread changé.")
+        driver.text("Mot de passe du thread changé")
       else
-        driver.text("⚠️ Seul le créateur peut changer le password.")
+        driver.text("⚠️ Seul le créateur peut changer le password")
       end
 
     when '/ban'
@@ -90,7 +88,7 @@ class ChatController
       if chat_room.creator == username
         chat_room.ban_user(user_to_ban)
       else
-        driver.text("⚠️ Seul le créateur peut bannir.")
+        driver.text("⚠️ Seul le créateur peut bannir")
       end
 
     when '/kick'
@@ -102,7 +100,7 @@ class ChatController
       if chat_room.creator == username
         chat_room.kick_user(user_to_kick)
       else
-        driver.text("⚠️ Seul le créateur peut kick.")
+        driver.text("⚠️ Seul le créateur peut kick")
       end
 
     when '/dm'
@@ -123,7 +121,7 @@ class ChatController
       driver.close
 
     # -----------------------------
-    # Ajout commande /color <couleur>
+    # commande /color <couleur>
     # -----------------------------
     when '/color'
       new_color = parts[1]
@@ -135,7 +133,7 @@ class ChatController
       driver.text("Votre couleur est maintenant #{new_color}")
 
     # -----------------------------
-    # Ajout commande /background <url>
+    # commande /background <url>
     # -----------------------------
     when '/background'
       bg_url = parts[1]
@@ -146,7 +144,7 @@ class ChatController
       chat_room.broadcast_background(bg_url)
 
     else
-      driver.text("⚠️ Commande inconnue. Tapez /help pour la liste.")
+      driver.text("⚠️ Commande inconnue. Tapez /help pour la liste")
     end
   end
 end
