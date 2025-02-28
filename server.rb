@@ -3,61 +3,73 @@ require 'colorize'
 require 'websocket/driver'
 require_relative './controllers/chat_controller'
 
-server_ip = '0.0.0.0'
+server_ip   = '0.0.0.0'
 server_port = 3630
-server = TCPServer.new(server_ip, server_port)
+server      = TCPServer.new(server_ip, server_port)
 chat_controller = ChatController.new
 
 puts "⚡️ Serveur WebSocket en cours d'exécution sur #{server_ip}:#{server_port}".green
 
 loop do
-  Thread.start(server.accept) do |client|
-    begin
-      driver = WebSocket::Driver.server(client)
+  socket = server.accept
 
-      driver.on(:connect) do |event|
-        if driver.headers['Upgrade'].downcase != 'websocket'
+  Thread.new do
+    begin
+      driver = WebSocket::Driver.server(socket)
+
+      driver.on(:connect) do
+        if driver.headers['Upgrade'].to_s.downcase != 'websocket'
           puts "🔴 Requête invalide - Pas de WebSocket".red
-          client.close
+          socket.close
         else
           driver.start
         end
       end
 
-      driver.on(:open) do |event|
-        puts "🟢 Connexion ouverte".green
-        client.puts "Entrez votre pseudo :"
+      driver.on(:open) do
+        puts "🟢 Connexion WebSocket ouverte".green
+        driver.text("Entrez votre pseudo :")
       end
 
+      username = nil
+      current_room = nil
+
       driver.on(:message) do |event|
-        message = event.data.chomp
-        if message.empty?
-          client.puts "Message vide, veuillez réessayer."
+        msg = event.data.strip
+        if username.nil?
+          username = msg
+          if username.empty?
+            driver.text("⚠️ Pseudo vide, réessayez.")
+            next
+          end
+
+          unless chat_controller.chat_rooms.key?("Main")
+            chat_controller.create_room("Main", nil, "Server")
+          end
+
+          current_room = chat_controller.chat_rooms["Main"]
+          current_room.add_client(driver, username)
+          driver.text("Bienvenue #{username}! Tapez /help pour la liste des commandes.")
           next
         end
 
-        if !client.closed?
-          chat_controller.create_room("Main", nil, "Server") unless chat_controller.chat_rooms.key?("Main")
-          chat_controller.chat_rooms["Main"].add_client(client, message)
-          chat_controller.chat_loop(client, chat_controller.chat_rooms["Main"], message)
-        else
-          puts "🔴 Connexion fermée par le client."
-        end
+        chat_controller.handle_message(driver, current_room, username, msg)
       end
 
-      driver.on(:close) do |event|
-        puts "🔴 Connexion fermée".red
-        client.close
+      driver.on(:close) do
+        puts "🔴 Connexion WebSocket fermée".red
+        current_room.remove_client(username) if current_room && username
+        socket.close
       end
 
-      while client && !client.closed?
-        data = client.readpartial(1024)
+      while !socket.closed? && (data = socket.gets)
         driver.parse(data)
       end
+
     rescue => e
       puts "⚠️ Erreur de connexion : #{e.message}".red
     ensure
-      client.close unless client.closed?
+      socket.close unless socket.closed?
     end
   end
 end

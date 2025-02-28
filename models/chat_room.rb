@@ -1,22 +1,21 @@
 class ChatRoom
   attr_accessor :name, :password, :clients, :creator, :history, :banned_users
 
-  def initialize(name, password = nil, creator = nil)
-    @name = name
-    @password = password
-    @clients = {}
-    @history = []
-    @creator = creator
+  def initialize(name, password=nil, creator=nil)
+    @name         = name
+    @password     = password
+    @creator      = creator
+    @clients      = {} # { username => driver }
+    @history      = []
     @banned_users = []
   end
 
-  def add_client(client, username)
+  def add_client(driver, username)
     if @banned_users.include?(username)
-      client.puts "⚠️ You are banned from this thread."
+      driver.text("⚠️ Vous êtes banni de ce thread.")
       return
     end
-
-    @clients[username] = client
+    @clients[username] = driver
     broadcast_message("#{username} joined the thread.", 'Server')
   end
 
@@ -30,19 +29,19 @@ class ChatRoom
   def ban_user(username)
     remove_client(username)
     @banned_users << username
-    broadcast_message("#{username} has been banned.", 'Server')
+    broadcast_message("#{username} a été banni.", 'Server')
   end
 
   def kick_user(username)
     remove_client(username)
-    broadcast_message("#{username} has been kicked out of the thread.", 'Server')
+    broadcast_message("#{username} a été expulsé du thread.", 'Server')
   end
 
   def direct_message(sender, recipient, message)
     if @clients.key?(recipient)
-      @clients[recipient].puts "[DM from #{sender}]: #{message}"
+      @clients[recipient].text("[DM de #{sender}] : #{message}")
     else
-      @clients[sender].puts "⚠️ User #{recipient} is not in the thread."
+      @clients[sender].text("⚠️ L'utilisateur #{recipient} n'est pas dans ce thread.")
     end
   end
 
@@ -50,9 +49,10 @@ class ChatRoom
     timestamp = Time.now.strftime('%Y-%m-%d %H:%M:%S')
     formatted_message = "[#{timestamp}] #{sender}: #{message}"
     @history << formatted_message
-    @clients.each_value do |client|
+
+    @clients.each_value do |driver|
       begin
-        client.puts formatted_message if client
+        driver.text(formatted_message)
       rescue IOError => e
         puts "⚠️ Erreur d'envoi de message : #{e.message}".yellow
       end
@@ -64,19 +64,19 @@ class ChatRoom
   end
 
   def commands
-    <<~COMMANDS
-      Available commands:
-      - /help: Show available commands
-      - /list: List users in the thread
-      - /history: Show message history
-      - /banned: Show banned users
-      - /cr <name> <password>: Create a new thread
-      - /cd <name> <password>: Switch to another thread
-      - /cpd <password>: Change thread password
-      - /ban <username>: Ban a user
-      - /kick <username>: Kick a user
-      - /dm <username> <message>: Send a direct message
-      - /qt <username> <command>: Execute a command remotely
-    COMMANDS
+    <<~CMD
+      Commandes disponibles :
+      /help               - Afficher cette aide
+      /list               - Liste des utilisateurs
+      /history            - Afficher l'historique
+      /banned             - Voir les bannis
+      /cr <nom> <pass>    - Créer un nouveau thread
+      /cd <nom> <pass>    - Changer de thread
+      /cpd <pass>         - Changer le password du thread
+      /ban <pseudo>       - Bannir un utilisateur
+      /kick <pseudo>      - Kick un utilisateur
+      /dm <pseudo> <msg>  - Message privé
+      /quit               - Quitter
+    CMD
   end
 end
