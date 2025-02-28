@@ -53,7 +53,7 @@ class ChatRoom
   def broadcast_message(message, sender)
     timestamp = Time.now.strftime('%Y-%m-%d %H:%M:%S')
     color = @client_colors[sender] || '#FFFFFF'
-    formatted_message = "[#{timestamp}] <span style='color: #{color}'>#{sender}:</span> #{message}"
+    formatted_message = "[#{timestamp}] <span style='color: #{color}'>#{sender}</span> #{message}"
     @history << formatted_message
 
     @clients.each_value do |driver|
