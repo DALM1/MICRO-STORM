@@ -30,13 +30,13 @@ class ChatController
       driver.text(chat_room.commands)
 
     when '/list'
-      driver.text("Utilisateurs dans ce thread | #{chat_room.list_users}")
+      driver.text("Utilisateurs dans ce thread : #{chat_room.list_users}")
 
     when '/history'
       chat_room.history.each { |line| driver.text(line) }
 
     when '/banned'
-      driver.text("Bannis | #{chat_room.banned_users.join(', ')}")
+      driver.text("Bannis : #{chat_room.banned_users.join(', ')}")
 
     when '/cr'
       room_name = parts[1]
@@ -46,7 +46,7 @@ class ChatController
         return
       end
       create_room(room_name, room_pass, username)
-      driver.text("Thread #{room_name} créé")
+      driver.text("Thread #{room_name} créé.")
 
     when '/cd'
       room_name = parts[1]
@@ -64,7 +64,7 @@ class ChatController
           driver.text("⚠️ Mot de passe incorrect pour #{room_name}")
         end
       else
-        driver.text("⚠️ Le thread #{room_name} n'existe pas")
+        driver.text("⚠️ Le thread #{room_name} n'existe pas.")
       end
 
     when '/cpd'
@@ -73,7 +73,7 @@ class ChatController
         chat_room.password = new_password
         driver.text("Mot de passe du thread changé.")
       else
-        driver.text("⚠️ Seul le créateur peut changer le password")
+        driver.text("⚠️ Seul le créateur peut changer le password.")
       end
 
     when '/ban'
@@ -85,7 +85,7 @@ class ChatController
       if chat_room.creator == username
         chat_room.ban_user(user_to_ban)
       else
-        driver.text("⚠️ Seul le créateur peut bannir")
+        driver.text("⚠️ Seul le créateur peut bannir.")
       end
 
     when '/kick'
@@ -97,7 +97,7 @@ class ChatController
       if chat_room.creator == username
         chat_room.kick_user(user_to_kick)
       else
-        driver.text("⚠️ Seul le créateur peut kick")
+        driver.text("⚠️ Seul le créateur peut kick.")
       end
 
     when '/dm'
@@ -110,14 +110,31 @@ class ChatController
       chat_room.direct_message(username, user_to_dm, dm_message)
 
     when '/qt'
-      driver.text("Commande /qt non implémentée")
+      driver.text("Commande /qt non implémentée.")
 
     when '/quit'
       chat_room.remove_client(username)
       driver.close
 
+    when '/color'
+      new_color = parts[1]
+      if new_color.nil?
+        driver.text("Usage: /color <couleur>")
+        return
+      end
+      chat_room.set_color(username, new_color)
+      driver.text("Votre couleur est maintenant #{new_color}")
+
+    when '/background'
+      bg_url = parts[1]
+      if bg_url.nil?
+        driver.text("Usage: /background <url>")
+        return
+      end
+      chat_room.broadcast_background(bg_url)
+
     else
-      driver.text("⚠️ Commande inconnue. Tapez /help pour la liste")
+      driver.text("⚠️ Commande inconnue. Tapez /help pour la liste.")
     end
   end
 end

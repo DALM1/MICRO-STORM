@@ -28,7 +28,7 @@ loop do
 
       driver.on(:open) do
         puts "🟢 Connexion WebSocket ouverte".green
-        driver.text("Entrez votre pseudo ")
+        driver.text("Bienvenue dans le chat")
       end
 
       username     = nil
@@ -40,7 +40,7 @@ loop do
         if username.nil?
           username = msg
           if username.empty?
-            driver.text("⚠️ Pseudo vide, réessayez.")
+            driver.text("⚠️ Pseudo vide, réessayez")
             next
           end
 
@@ -50,7 +50,7 @@ loop do
 
           current_room = chat_controller.chat_rooms["Main"]
           current_room.add_client(driver, username)
-          driver.text("Bienvenue #{username} Tapez /help pour la liste des commandes.")
+          driver.text("Bienvenue #{username}  Tapez /help pour la liste des commandes")
           next
         end
 
@@ -71,7 +71,7 @@ loop do
       end
 
     rescue => e
-      puts "⚠️ Erreur de connexion : #{e.message}".red
+      puts "⚠️ Erreur de connexion #{e.message}".red
     ensure
       socket.close unless socket.closed?
     end
