@@ -18,7 +18,7 @@ loop do
       driver = WebSocket::Driver.server(socket)
 
       driver.on(:connect) do
-        if driver.headers['Upgrade'].to_s.downcase != 'websocket'
+        if driver.env['HTTP_UPGRADE'].to_s.downcase != 'websocket'
           puts "🔴 Requête invalide - Pas de WebSocket".red
           socket.close
         else
@@ -31,11 +31,12 @@ loop do
         driver.text("Entrez votre pseudo :")
       end
 
-      username = nil
+      username     = nil
       current_room = nil
 
       driver.on(:message) do |event|
         msg = event.data.strip
+
         if username.nil?
           username = msg
           if username.empty?
@@ -62,8 +63,11 @@ loop do
         socket.close
       end
 
-      while !socket.closed? && (data = socket.gets)
-        driver.parse(data)
+      begin
+        while (data = socket.readpartial(1024))
+          driver.parse(data)
+        end
+      rescue EOFError
       end
 
     rescue => e
