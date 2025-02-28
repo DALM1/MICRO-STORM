@@ -12,7 +12,7 @@ class ChatRoom
 
   def add_client(driver, username)
     if @banned_users.include?(username)
-      driver.text("⚠️ Vous êtes banni de ce thread.")
+      driver.text("⚠️ Vous êtes banni de ce thread")
       return
     end
     @clients[username] = driver
@@ -41,13 +41,13 @@ class ChatRoom
     if @clients.key?(recipient)
       @clients[recipient].text("[DM de #{sender}] : #{message}")
     else
-      @clients[sender].text("⚠️ L'utilisateur #{recipient} n'est pas dans ce thread.")
+      @clients[sender].text("⚠️ L'utilisateur #{recipient} n'est pas dans ce thread")
     end
   end
 
   def broadcast_message(message, sender)
     timestamp = Time.now.strftime('%Y-%m-%d %H:%M:%S')
-    formatted_message = "[#{timestamp}] #{sender}: #{message}"
+    formatted_message = "[#{timestamp}] #{sender}| #{message}"
     @history << formatted_message
 
     @clients.each_value do |driver|

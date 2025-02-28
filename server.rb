@@ -28,7 +28,7 @@ loop do
 
       driver.on(:open) do
         puts "🟢 Connexion WebSocket ouverte".green
-        driver.text("Entrez votre pseudo :")
+        driver.text("Entrez votre pseudo ")
       end
 
       username     = nil
@@ -50,7 +50,7 @@ loop do
 
           current_room = chat_controller.chat_rooms["Main"]
           current_room.add_client(driver, username)
-          driver.text("Bienvenue #{username}! Tapez /help pour la liste des commandes.")
+          driver.text("Bienvenue #{username} Tapez /help pour la liste des commandes.")
           next
         end
 
