@@ -50,8 +50,12 @@ class ChatRoom
     @client_colors[username] = color
   end
 
+  # -----------------------------
+  # Envoi de message à tous
+  # Timestamp raccourci en HH:MM
+  # -----------------------------
   def broadcast_message(message, sender)
-    timestamp = Time.now.strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = Time.now.strftime('%H:%M')
     color = @client_colors[sender] || '#FFFFFF'
     formatted_message = "[#{timestamp}] <span style='color: #{color}'>#{sender}</span> #{message}"
     @history << formatted_message
@@ -64,11 +68,21 @@ class ChatRoom
     end
   end
 
+  # -----------------------------
+  # Commande pour changer le BG
+  # -----------------------------
   def broadcast_background(url)
     special_msg = "CHANGE_BG|#{url}"
+    broadcast_special(special_msg)
+  end
+
+  # -----------------------------
+  # Commandes spéciales : /typo, /textcolor
+  # -----------------------------
+  def broadcast_special(msg)
     @clients.each_value do |driver|
       begin
-        driver.text(special_msg)
+        driver.text(msg)
       rescue IOError => e
         puts "⚠️ #{e.message}".yellow
       end
@@ -79,25 +93,31 @@ class ChatRoom
     @clients.keys.join(', ')
   end
 
+  # -----------------------------
+  # Liste des commandes
+  # -----------------------------
   def commands
     <<~CMD
       Commandes disponibles :
-      /help               - Afficher cette aide
-      /list               - Liste des utilisateurs
-      /history            - Afficher l'historique
-      /banned             - Voir les bannis
-      /cr <nom> <pass>    - Créer un nouveau thread
-      /cd <nom> <pass>    - Changer de thread
-      /cpd <pass>         - Changer le password du thread
-      /ban <pseudo>       - Bannir un utilisateur
-      /kick <pseudo>      - Kick un utilisateur
-      /dm <pseudo> <msg>  - Message privé
-      /color <couleur>    - Changer la couleur de votre pseudo
-      /background <url>   - Changer le background (pour tout le monde)
-      /powerto <pseudo>   - Donner le rôle de créateur
+      /help                        - Afficher cette aide
+      /list                        - Liste des utilisateurs
+      /info                        - Infos sur ce thread
+      /history                     - Afficher l'historique
+      /banned                      - Voir les bannis
+      /cr <nom> <pass>             - Créer un nouveau thread (et y basculer)
+      /cd <nom> <pass>             - Changer de thread
+      /cpd <pass>                  - Changer le password du thread
+      /ban <pseudo>                - Bannir un utilisateur
+      /kick <pseudo>               - Kick un utilisateur
+      /dm <pseudo> <msg>           - Message privé
+      /color <couleur>             - Changer la couleur de votre pseudo
+      /background <url>            - Changer le background (pour tout le monde)
+      /powerto <pseudo>            - Donner le rôle de créateur
+      /typo <font_family>          - Changer la police de tout le chat
+      /textcolor <couleur>         - Changer la couleur de tout le texte
       /register <email> <pass> <pseudo> - Créer un compte
-      /login <email> <pass>            - Se connecter
-      /quit               - Quitter
+      /login <email> <pass>        - Se connecter
+      /quit                        - Quitter
     CMD
   end
 end

@@ -32,12 +32,22 @@ class ChatController
     when '/list'
       driver.text("Utilisateurs dans ce thread | #{chat_room.list_users}")
 
+    # -----------------------------
+    # /info => thread, creator, users
+    # -----------------------------
+    when '/info'
+      driver.text("Thread : #{chat_room.name} | Creator : #{chat_room.creator} | Users : #{chat_room.list_users}")
+
     when '/history'
       chat_room.history.each { |line| driver.text(line) }
 
     when '/banned'
       driver.text("Bannis : #{chat_room.banned_users.join(', ')}")
 
+    # -----------------------------
+    # Création de thread => /cr <nom> <pass>
+    # On bascule direct dans le nouveau thread
+    # -----------------------------
     when '/cr'
       room_name = parts[1]
       room_pass = parts[2]
@@ -45,8 +55,11 @@ class ChatController
         driver.text("Usage: /cr <nom> <password>")
         return
       end
-      create_room(room_name, room_pass, username) # le user devient creator
+      create_room(room_name, room_pass, username)
       driver.text("Thread #{room_name} créé.")
+      chat_room.remove_client(username)
+      new_room = @chat_rooms[room_name]
+      new_room.add_client(driver, username)
 
     when '/cd'
       room_name = parts[1]
@@ -133,9 +146,6 @@ class ChatController
       end
       chat_room.broadcast_background(bg_url)
 
-    # -----------------------------
-    # Nouveau: /powerto <pseudo>
-    # -----------------------------
     when '/powerto'
       target = parts[1]
       if target.nil?
@@ -154,7 +164,31 @@ class ChatController
       chat_room.broadcast_message("#{username} a donné le rôle de créateur à #{target}", 'Server')
 
     # -----------------------------
-    # Commandes d'auth en chat
+    # /typo <font> => CHANGER LA POLICE GLOBALE
+    # -----------------------------
+    when '/typo'
+      new_font = parts[1]
+      if new_font.nil?
+        driver.text("Usage: /typo <font_family>")
+        return
+      end
+      special_msg = "CHANGE_FONT|#{new_font}"
+      chat_room.broadcast_special(special_msg)
+
+    # -----------------------------
+    # /textcolor <couleur> => CHANGER COULEUR TOUTE L'APP
+    # -----------------------------
+    when '/textcolor'
+      new_txt_color = parts[1]
+      if new_txt_color.nil?
+        driver.text("Usage: /textcolor <couleur>")
+        return
+      end
+      special_msg = "CHANGE_TEXTCOLOR|#{new_txt_color}"
+      chat_room.broadcast_special(special_msg)
+
+    # -----------------------------
+    # Commandes d'auth
     # -----------------------------
     when '/register'
       email = parts[1]
@@ -176,14 +210,9 @@ class ChatController
       end
       login_result = login_account(email, pass)
       if login_result.start_with?("| Logged in as")
-        # Extraire le pseudo
-        # Format => "| Logged in as PSEUDO"
         new_pseudo = login_result.split("as ")[1]
-        # Retirer l'utilisateur actuel
         chat_room.remove_client(username)
-        # Mettre à jour username
-        username.replace(new_pseudo) # pour modifier la variable
-        # Rejoindre la room avec le nouveau pseudo
+        username.replace(new_pseudo)
         chat_room.add_client(driver, username)
       end
       driver.text(login_result)
@@ -195,9 +224,6 @@ class ChatController
 
   private
 
-  # -----------------------------
-  # DB
-  # -----------------------------
   def db_connection
     PG.connect(
       dbname: ENV['DB_NAME'],
@@ -218,7 +244,7 @@ class ChatController
     rescue PG::UniqueViolation
       "| Email or username used"
     rescue => ex
-      "| Error register: #{ex.message}"
+      "| Error #{ex.message}"
     end
   end
 
@@ -237,7 +263,7 @@ class ChatController
         "| Invalid password"
       end
     rescue => ex
-      "| Error login: #{ex.message}"
+      "| Error #{ex.message}"
     end
   end
 end
