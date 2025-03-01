@@ -1,16 +1,12 @@
 require_relative '../models/chat_room'
-
 class ChatController
   attr_accessor :chat_rooms
-
   def initialize
     @chat_rooms = {}
   end
-
   def create_room(name, password=nil, creator=nil)
     @chat_rooms[name] = ChatRoom.new(name, password, creator)
   end
-
   def handle_message(driver, chat_room, username, message)
     if message.start_with?('/')
       handle_command(message, driver, chat_room, username)
@@ -18,28 +14,19 @@ class ChatController
       chat_room.broadcast_message(message, username)
     end
   end
-
-  private
-
   def handle_command(msg, driver, chat_room, username)
-    parts   = msg.split(' ')
+    parts = msg.split(' ')
     command = parts[0].downcase
-
     case command
     when '/help'
       driver.text(chat_room.commands)
-
     when '/list'
       driver.text("Utilisateurs dans ce thread | #{chat_room.list_users}")
-
     when '/history'
       chat_room.history.each { |line| driver.text(line) }
-
     when '/banned'
       driver.text("Bannis : #{chat_room.banned_users.join(', ')}")
-
     when '/cr'
-      # /cr <nom> <pass>
       room_name = parts[1]
       room_pass = parts[2]
       if room_name.nil?
@@ -48,9 +35,7 @@ class ChatController
       end
       create_room(room_name, room_pass, username)
       driver.text("Thread #{room_name} créé.")
-
     when '/cd'
-      # /cd <nom> <pass>
       room_name = parts[1]
       room_pass = parts[2]
       if room_name.nil?
@@ -68,9 +53,7 @@ class ChatController
       else
         driver.text("⚠️ Le thread #{room_name} n'existe pas")
       end
-
     when '/cpd'
-      # /cpd <password>
       new_password = parts[1]
       if chat_room.creator == username
         chat_room.password = new_password
@@ -78,7 +61,6 @@ class ChatController
       else
         driver.text("⚠️ Seul le créateur peut changer le password")
       end
-
     when '/ban'
       user_to_ban = parts[1]
       if user_to_ban.nil?
@@ -90,7 +72,6 @@ class ChatController
       else
         driver.text("⚠️ Seul le créateur peut bannir")
       end
-
     when '/kick'
       user_to_kick = parts[1]
       if user_to_kick.nil?
@@ -102,9 +83,7 @@ class ChatController
       else
         driver.text("⚠️ Seul le créateur peut kick")
       end
-
     when '/dm'
-      # /dm <pseudo> <message>
       user_to_dm = parts[1]
       dm_message = parts[2..-1].join(' ')
       if user_to_dm.nil? || dm_message.empty?
@@ -112,17 +91,11 @@ class ChatController
         return
       end
       chat_room.direct_message(username, user_to_dm, dm_message)
-
     when '/qt'
       driver.text("Commande /qt non implémentée.")
-
     when '/quit'
       chat_room.remove_client(username)
       driver.close
-
-    # -----------------------------
-    # commande /color <couleur>
-    # -----------------------------
     when '/color'
       new_color = parts[1]
       if new_color.nil?
@@ -131,10 +104,6 @@ class ChatController
       end
       chat_room.set_color(username, new_color)
       driver.text("Votre couleur est maintenant #{new_color}")
-
-    # -----------------------------
-    # commande /background <url>
-    # -----------------------------
     when '/background'
       bg_url = parts[1]
       if bg_url.nil?
@@ -142,7 +111,6 @@ class ChatController
         return
       end
       chat_room.broadcast_background(bg_url)
-
     else
       driver.text("⚠️ Commande inconnue. Tapez /help pour la liste")
     end
