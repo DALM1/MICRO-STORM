@@ -1,5 +1,6 @@
 class ChatRoom
   attr_accessor :name, :password, :clients, :creator, :history, :banned_users, :client_colors
+
   def initialize(name, password=nil, creator=nil)
     @name = name
     @password = password
@@ -9,6 +10,7 @@ class ChatRoom
     @banned_users = []
     @client_colors = {}
   end
+
   def add_client(driver, username)
     if @banned_users.include?(username)
       driver.text("⚠️ Vous êtes banni de ce thread")
@@ -17,31 +19,37 @@ class ChatRoom
     @clients[username] = driver
     broadcast_message("#{username} joined the thread", 'Server')
   end
+
   def remove_client(username)
     if @clients.key?(username)
       @clients.delete(username)
       broadcast_message("#{username} left the thread", 'Server')
     end
   end
+
   def ban_user(username)
     remove_client(username)
     @banned_users << username
     broadcast_message("#{username} a été banni", 'Server')
   end
+
   def kick_user(username)
     remove_client(username)
     broadcast_message("#{username} a été expulsé du thread", 'Server')
   end
+
   def direct_message(sender, recipient, message)
     if @clients.key?(recipient)
-      @clients[recipient].text("[DM de #{sender}] | #{message}")
+      @clients[recipient].text("W (private) | #{sender}] | #{message}")
     else
       @clients[sender].text("⚠️ L'utilisateur #{recipient} n'est pas dans ce thread")
     end
   end
+
   def set_color(username, color)
     @client_colors[username] = color
   end
+
   def broadcast_message(message, sender)
     timestamp = Time.now.strftime('%Y-%m-%d %H:%M:%S')
     color = @client_colors[sender] || '#FFFFFF'
@@ -55,6 +63,7 @@ class ChatRoom
       end
     end
   end
+
   def broadcast_background(url)
     special_msg = "CHANGE_BG|#{url}"
     @clients.each_value do |driver|
@@ -65,9 +74,11 @@ class ChatRoom
       end
     end
   end
+
   def list_users
     @clients.keys.join(', ')
   end
+
   def commands
     <<~CMD
       Commandes disponibles :
@@ -83,6 +94,9 @@ class ChatRoom
       /dm <pseudo> <msg>  - Message privé
       /color <couleur>    - Changer la couleur de votre pseudo
       /background <url>   - Changer le background (pour tout le monde)
+      /powerto <pseudo>   - Donner le rôle de créateur
+      /register <email> <pass> <pseudo> - Créer un compte
+      /login <email> <pass>            - Se connecter
       /quit               - Quitter
     CMD
   end
