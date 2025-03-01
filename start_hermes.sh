@@ -1,5 +1,7 @@
 #!/bin/bash
 cd /root/MICRO-STORM
+mv gemfile Gemfile
+bundle
 docker build -t hermes .
 docker run -d --name hermes_container \
   -p 3630:3630 \
