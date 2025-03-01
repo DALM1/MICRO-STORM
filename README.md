@@ -2,7 +2,7 @@
 MICRO-STORM
 </h1>
 
-![MICRO X STORM](capt-hermes-x-storm.png)
+![MICRO X STORM](hermes-x-storm.png)
 
 
  FONCTIONNALITÉS PRINCIPALES
