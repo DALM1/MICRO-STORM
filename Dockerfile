@@ -1,10 +1,11 @@
 FROM ruby:3.2
-RUN apt-get update && apt-get install -y build-essential autoconf automake libtool pkg-config \
-                   libssl-dev zlib1g-dev libprotobuf-dev protobuf-compiler
+RUN apt-get update && apt-get install -y \
+    build-essential autoconf automake libtool pkg-config \
+    libssl-dev zlib1g-dev libprotobuf-dev protobuf-compiler
 WORKDIR /app
 COPY Gemfile Gemfile.lock ./
 RUN gem install bundler
-RUN bundle install --jobs=4 --retry=3
+RUN bundle install --jobs=4 --retry=3 --no-document
 COPY . /app
 EXPOSE 3630
 EXPOSE 4567

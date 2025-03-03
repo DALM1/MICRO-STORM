@@ -1,10 +1,7 @@
 #!/bin/bash
 cd /root/MICRO-STORM
-docker rm -f hermes_container 2>/dev/null
 mv gemfile Gemfile 2>/dev/null
-apt-get update
-apt-get install -y build-essential libprotobuf-dev protobuf-compiler
-bundle install --jobs=4 --retry=3
+docker rm -f hermes_container 2>/dev/null
 docker build -t hermes .
 docker run -d --name hermes_container \
   -p 3630:3630 \
