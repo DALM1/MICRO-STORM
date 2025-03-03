@@ -1,5 +1,6 @@
 FROM ruby:3.2
-RUN apt-get update && apt-get install -y libpq-dev
+RUN apt-get update && apt-get install -y build-essential autoconf automake libtool pkg-config \
+                   libssl-dev zlib1g-dev libprotobuf-dev protobuf-compiler
 WORKDIR /app
 COPY Gemfile Gemfile.lock ./
 RUN gem install bundler
