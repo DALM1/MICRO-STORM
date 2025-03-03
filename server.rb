@@ -24,7 +24,7 @@ loop do
       end
       driver.on(:open) do
         puts "🟢".green
-        driver.text("Entrez votre username ")
+        driver.text("| Entrez votre username ")
       end
       username = nil
       current_room = nil
@@ -33,7 +33,7 @@ loop do
         if username.nil?
           username = msg
           if username.empty?
-            driver.text("⚠️ Pseudo vide, réessayez").red
+            driver.text("| ⚠️ Pseudo vide, réessayez").red
             next
           end
           unless chat_controller.chat_rooms.key?("Main")
@@ -41,7 +41,7 @@ loop do
           end
           current_room = chat_controller.chat_rooms["Main"]
           current_room.add_client(driver, username)
-          driver.text("Bienvenue #{username} Tapez /help pour la liste des commandes")
+          driver.text("| Bienvenue #{username} Tapez /help pour la liste des commandes")
           next
         end
         chat_controller.handle_message(driver, current_room, username, msg)
