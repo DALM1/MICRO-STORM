@@ -22,7 +22,7 @@ class ChatController
   end
 
   def handle_command(msg, driver, chat_room, username)
-    parts = msg.split(' ')
+    parts   = msg.split(' ')
     command = parts[0].downcase
 
     case command
@@ -32,9 +32,6 @@ class ChatController
     when '/list'
       driver.text("Utilisateurs dans ce thread | #{chat_room.list_users}")
 
-    # -----------------------------
-    # /info => thread, creator, users
-    # -----------------------------
     when '/info'
       driver.text("Thread : #{chat_room.name} | Creator : #{chat_room.creator} | Users : #{chat_room.list_users}")
 
@@ -44,10 +41,6 @@ class ChatController
     when '/banned'
       driver.text("Bannis : #{chat_room.banned_users.join(', ')}")
 
-    # -----------------------------
-    # Création de thread => /cr <nom> <pass>
-    # On bascule direct dans le nouveau thread
-    # -----------------------------
     when '/cr'
       room_name = parts[1]
       room_pass = parts[2]
@@ -163,9 +156,6 @@ class ChatController
       chat_room.creator = target
       chat_room.broadcast_message("#{username} a donné le rôle de créateur à #{target}", 'Server')
 
-    # -----------------------------
-    # /typo <font> => CHANGER LA POLICE GLOBALE
-    # -----------------------------
     when '/typo'
       new_font = parts[1]
       if new_font.nil?
@@ -175,9 +165,6 @@ class ChatController
       special_msg = "CHANGE_FONT|#{new_font}"
       chat_room.broadcast_special(special_msg)
 
-    # -----------------------------
-    # /textcolor <couleur> => CHANGER COULEUR TOUTE L'APP
-    # -----------------------------
     when '/textcolor'
       new_txt_color = parts[1]
       if new_txt_color.nil?
@@ -187,12 +174,9 @@ class ChatController
       special_msg = "CHANGE_TEXTCOLOR|#{new_txt_color}"
       chat_room.broadcast_special(special_msg)
 
-    # -----------------------------
-    # Commandes d'auth
-    # -----------------------------
     when '/register'
       email = parts[1]
-      pass = parts[2]
+      pass  = parts[2]
       new_user = parts[3]
       if email.nil? || pass.nil? || new_user.nil?
         driver.text("Usage: /register <email> <password> <pseudo>")
@@ -203,7 +187,7 @@ class ChatController
 
     when '/login'
       email = parts[1]
-      pass = parts[2]
+      pass  = parts[2]
       if email.nil? || pass.nil?
         driver.text("Usage: /login <email> <password>")
         return
@@ -216,6 +200,15 @@ class ChatController
         chat_room.add_client(driver, username)
       end
       driver.text(login_result)
+
+    # -----------------------------
+    # Nouveau : /clear
+    # -----------------------------
+    when '/clear'
+      chat_room.history.clear
+      # Envoyer un message spécial au front
+      chat_room.broadcast_special("CLEAR_LOGS|")
+      driver.text("Logs cleared.")
 
     else
       driver.text("⚠️ Commande inconnue. Tapez /help pour la liste")
