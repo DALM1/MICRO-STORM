@@ -2,7 +2,7 @@ FROM ruby:3.2
 
 RUN apt-get update && apt-get install -y \
     build-essential autoconf automake libtool pkg-config \
-    libssl-dev zlib1g-dev
+    libssl-dev zlib1g-dev libprotobuf-dev protobuf-compiler
 
 WORKDIR /app
 
@@ -16,5 +16,6 @@ COPY . /app
 
 EXPOSE 3630
 EXPOSE 4567
+EXPOSE 50051
 
-CMD ["/bin/bash", "-c", "ruby auth_app.rb & ruby server.rb"]
+CMD ["/bin/bash", "-c", "ruby auth_app.rb & ruby server_grpc.rb"]

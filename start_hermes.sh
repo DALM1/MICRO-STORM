@@ -1,11 +1,8 @@
 #!/bin/bash
 
 cd /root/MICRO-STORM
-
 docker rm -f hermes_container 2>/dev/null
-
 mv gemfile Gemfile 2>/dev/null
-
 docker build -t hermes .
 
 docker run -d --name hermes_container \
