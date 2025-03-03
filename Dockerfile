@@ -10,7 +10,8 @@ COPY Gemfile Gemfile.lock ./
 
 RUN gem update --system
 RUN gem install bundler -v "~>2.4"
-RUN bundle install --jobs=1 --retry=3 --no-document
+
+RUN bundle install --jobs=4 --retry=3 --no-document
 
 COPY . /app
 
@@ -18,4 +19,4 @@ EXPOSE 3630
 EXPOSE 4567
 EXPOSE 50051
 
-CMD ["/bin/bash", "-c", "ruby auth_app.rb & ruby server_grpc.rb"]
+CMD ["/bin/bash", "-c", "ruby auth_app.rb & ruby server_grpc.rb & ruby server.rb"]

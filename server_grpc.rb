@@ -20,7 +20,11 @@ class ChatServiceImpl < Chat::ChatService::Service
         end
         room = @chat_controller.chat_rooms["Main"]
         room.add_client(call, username)
-        welcome = Chat::ChatMessage.new(sender: "Server", content: "Bienvenue #{username} Tapez /help pour la liste des commandes", timestamp: Time.now.strftime('%H:%M'))
+        welcome = Chat::ChatMessage.new(
+          sender: "Server",
+          content: "Bienvenue #{username} Tapez /help pour la liste des commandes",
+          timestamp: Time.now.strftime('%H:%M')
+        )
         call.send_msg(welcome)
       else
         @chat_controller.handle_message(call, room, username, chat_msg.content)

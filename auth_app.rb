@@ -13,7 +13,8 @@ begin
   c = db_connection
   c.exec("CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, email TEXT UNIQUE NOT NULL, username TEXT UNIQUE NOT NULL, password_digest TEXT NOT NULL)")
   c.close
-rescue
+rescue => e
+  puts "Error creating table: #{e}"
 end
 
 post '/register' do

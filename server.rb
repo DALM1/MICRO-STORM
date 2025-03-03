@@ -22,12 +22,15 @@ loop do
           driver.start
         end
       end
+
       driver.on(:open) do
         puts "🟢".green
         driver.text("Entrez votre pseudo ")
       end
-      username = nil
+
+      username     = nil
       current_room = nil
+
       driver.on(:message) do |event|
         msg = event.data.strip
         if username.nil?
@@ -46,14 +49,17 @@ loop do
         end
         chat_controller.handle_message(driver, current_room, username, msg)
       end
+
       driver.on(:close) do
         puts "🔴 Connexion WebSocket fermée".red
         current_room.remove_client(username) if current_room && username
         socket.close
       end
+
       while (data = socket.readpartial(1024))
         driver.parse(data)
       end
+
     rescue EOFError
     rescue => e
       puts "⚠️ #{e.message}".red
