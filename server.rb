@@ -24,7 +24,7 @@ loop do
       end
       driver.on(:open) do
         puts "🟢".green
-        driver.text("Entrez votre pseudo ")
+        driver.text("Entrez votre username ")
       end
       username = nil
       current_room = nil
@@ -33,7 +33,7 @@ loop do
         if username.nil?
           username = msg
           if username.empty?
-            driver.text("⚠️ Pseudo vide, réessayez")
+            driver.text("⚠️ Pseudo vide, réessayez").red
             next
           end
           unless chat_controller.chat_rooms.key?("Main")
@@ -47,7 +47,7 @@ loop do
         chat_controller.handle_message(driver, current_room, username, msg)
       end
       driver.on(:close) do
-        puts "🔴 Connexion WebSocket fermée".red
+        puts "🔴 Connexion WS fermée".red
         current_room.remove_client(username) if current_room && username
         socket.close
       end
