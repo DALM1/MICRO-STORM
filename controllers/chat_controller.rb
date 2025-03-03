@@ -33,13 +33,13 @@ class ChatController
       driver.text("Utilisateurs dans ce thread | #{chat_room.list_users}")
 
     when '/info'
-      driver.text("Thread : #{chat_room.name} | Creator : #{chat_room.creator} | Users : #{chat_room.list_users}")
+      driver.text("Thread | #{chat_room.name} | creator  #{chat_room.creator} | users  #{chat_room.list_users}")
 
     when '/history'
       chat_room.history.each { |line| driver.text(line) }
 
     when '/banned'
-      driver.text("Bannis : #{chat_room.banned_users.join(', ')}")
+      driver.text("Bannis  #{chat_room.banned_users.join(', ')}")
 
     when '/cr'
       room_name = parts[1]
@@ -208,7 +208,8 @@ class ChatController
       chat_room.history.clear
       # Envoyer un message spécial au front
       chat_room.broadcast_special("CLEAR_LOGS|")
-      driver.text("Logs cleared.")
+      driver.text("|| Logs cleared.")
+      driver.text("|| ⚠️ Connected to WS server")
 
     else
       driver.text("⚠️ Commande inconnue. Tapez /help pour la liste")
