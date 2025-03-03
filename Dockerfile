@@ -10,7 +10,7 @@ COPY Gemfile Gemfile.lock ./
 
 RUN gem update --system
 RUN gem install bundler -v "~>2.4"
-# RUN bundle install --jobs=1 --retry=3 --no-document
+RUN bundle install --jobs=1 --retry=3 --no-document
 
 COPY . /app
 
