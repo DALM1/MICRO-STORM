@@ -1,14 +1,35 @@
+require 'pg'
+require 'time'
+
 class ChatRoom
   attr_accessor :name, :password, :clients, :creator, :history, :banned_users, :client_colors
 
   def initialize(name, password=nil, creator=nil)
-    @name         = name
-    @password     = password
-    @creator      = creator
-    @clients      = {}
-    @history      = []
+    @name = name
+    @password = password
+    @creator = creator
+    @clients = {}
+    @history = []
     @banned_users = []
     @client_colors = {}
+    ensure_messages_table
+  end
+
+  def ensure_messages_table
+    begin
+      conn = PG.connect(dbname: ENV['MSG_DB_NAME'], user: ENV['MSG_DB_USER'], password: ENV['MSG_DB_PASS'], host: ENV['MSG_DB_HOST'])
+      conn.exec <<-SQL
+        CREATE TABLE IF NOT EXISTS messages (
+          id SERIAL PRIMARY KEY,
+          sender TEXT,
+          content TEXT,
+          timestamp TEXT
+        );
+      SQL
+      conn.close
+    rescue => ex
+      puts "Error creating messages table: #{ex.message}"
+    end
   end
 
   def add_client(conn, username)
@@ -53,10 +74,21 @@ class ChatRoom
   def broadcast_message(message, sender)
     timestamp = Time.now.strftime('%H:%M')
     color = @client_colors[sender] || '#FFFFFF'
-    formatted_message = "[#{timestamp}] <span style='color: #{color}'>#{sender}</span> #{message}"
+    formatted_message = "[#{timestamp}] <span style='color: #{color}'>#{sender}</span> #{linkify(message)}"
     @history << formatted_message
+    persist_message(message, sender, timestamp)
     @clients.each_value do |conn|
       send_msg(conn, formatted_message)
+    end
+  end
+
+  def persist_message(message, sender, timestamp)
+    begin
+      conn = PG.connect(dbname: ENV['MSG_DB_NAME'], user: ENV['MSG_DB_USER'], password: ENV['MSG_DB_PASS'], host: ENV['MSG_DB_HOST'])
+      conn.exec_params("INSERT INTO messages (sender, content, timestamp) VALUES ($1, $2, $3)", [sender, message, timestamp])
+      conn.close
+    rescue => ex
+      puts "Error persisting message: #{ex.message}"
     end
   end
 
@@ -75,29 +107,29 @@ class ChatRoom
   end
 
   def commands
-    <<~CMD
-      Commandes disponibles :
-      /help                        - Afficher cette aide
-      /list                        - Liste des utilisateurs
-      /info                        - Infos sur ce thread
-      /history                     - Afficher l'historique
-      /banned                      - Voir les bannis
-      /cr <nom> <pass>             - Créer un nouveau thread (et y basculer)
-      /cd <nom> <pass>             - Changer de thread
-      /cpd <pass>                  - Changer le password du thread
-      /ban <pseudo>                - Bannir un utilisateur
-      /kick <pseudo>               - Kick un utilisateur
-      /dm <pseudo> <msg>           - Message privé
-      /color <couleur>             - Changer la couleur de votre pseudo
-      /background <url>            - Changer le background (pour tout le monde)
-      /powerto <pseudo>            - Donner le rôle de créateur
-      /typo <font_family>          - Changer la police de tout le chat
-      /textcolor <couleur>         - Changer la couleur de tout le texte
-      /register <email> <pass> <pseudo> - Créer un compte
-      /login <email> <pass>        - Se connecter
-      /clear                       - Effacer l'historique
-      /quit                        - Quitter
-    CMD
+    lines = [
+      "/help                        - Afficher cette aide",
+      "/list                        - Liste des utilisateurs",
+      "/info                        - Infos sur ce thread",
+      "/history                     - Afficher l'historique",
+      "/banned                      - Voir les bannis",
+      "/cr <nom> <pass>             - Créer un nouveau thread (et y basculer)",
+      "/cd <nom> <pass>             - Changer de thread",
+      "/cpd <pass>                  - Changer le password du thread",
+      "/ban <pseudo>                - Bannir un utilisateur",
+      "/kick <pseudo>               - Kick un utilisateur",
+      "/dm <pseudo> <msg>           - Message privé",
+      "/color <couleur>             - Changer la couleur de votre pseudo",
+      "/background <url>            - Changer le background (pour tout le monde)",
+      "/powerto <pseudo>            - Donner le rôle de créateur",
+      "/typo <font_family>          - Changer la police de tout le chat",
+      "/textcolor <couleur>         - Changer la couleur de tout le texte",
+      "/register <email> <pass> <pseudo> - Créer un compte",
+      "/login <email> <pass>        - Se connecter",
+      "/clear                       - Effacer l'historique",
+      "/quit                        - Quitter"
+    ]
+    lines.map { |line| "$ #{line}" }.join("\n")
   end
 
   private
@@ -115,6 +147,16 @@ class ChatRoom
         content: text,
         timestamp: Time.now.strftime('%H:%M')
       ))
+    end
+  end
+
+  def linkify(text)
+    text.gsub(%r{(https?://\S+)}) do |url|
+      if url =~ /\.(jpg|jpeg|png|gif)\b/i
+        %Q{<a href="#{url}" target="_blank"><img src="#{url}" alt="Image" style="max-width:200px;"/></a>}
+      else
+        %Q{<a href="#{url}" target="_blank">#{url}</a>}
+      end
     end
   end
 end

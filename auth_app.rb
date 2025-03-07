@@ -1,18 +1,25 @@
 require 'sinatra'
-require 'pg'
+require 'sqlite3'
 require 'bcrypt'
 
 set :bind, '0.0.0.0'
 set :port, 4567
 
 def db_connection
-  PG.connect(dbname: ENV['DB_NAME'], user: ENV['DB_USER'], password: ENV['DB_PASS'], host: ENV['DB_HOST'])
+  SQLite3::Database.new "auth.db", results_as_hash: true
 end
 
 begin
-  c = db_connection
-  c.exec("CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, email TEXT UNIQUE NOT NULL, username TEXT UNIQUE NOT NULL, password_digest TEXT NOT NULL)")
-  c.close
+  db = db_connection
+  db.execute <<-SQL
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE NOT NULL,
+      username TEXT UNIQUE NOT NULL,
+      password_digest TEXT NOT NULL
+    );
+  SQL
+  db.close
 rescue => e
   puts "Error creating table: #{e}"
 end
@@ -24,11 +31,10 @@ post '/register' do
   return "| Missing fields" if e.empty? || p1.empty? || u.empty?
   pd = BCrypt::Password.create(p1)
   begin
-    c = db_connection
-    c.exec_params("INSERT INTO users (email, username, password_digest) VALUES ($1, $2, $3)", [e, u, pd])
-    c.close
+    db = db_connection
+    db.execute("INSERT INTO users (email, username, password_digest) VALUES (?, ?, ?)", [e, u, pd])
     "| User registered"
-  rescue PG::UniqueViolation
+  rescue SQLite3::ConstraintException
     "| Email or username used"
   rescue => ex
     "| Error register: #{ex.message}"
@@ -40,13 +46,11 @@ post '/login' do
   p1 = params[:password].to_s
   return "| Missing fields" if e.empty? || p1.empty?
   begin
-    c = db_connection
-    r = c.exec_params("SELECT * FROM users WHERE email=$1", [e])
-    c.close
-    return "| No account" if r.ntuples == 0
-    d = r[0]['password_digest']
-    if BCrypt::Password.new(d) == p1
-      "| Logged in as #{r[0]['username']}"
+    db = db_connection
+    row = db.get_first_row("SELECT * FROM users WHERE email = ?", [e])
+    return "| No account" if row.nil?
+    if BCrypt::Password.new(row['password_digest']) == p1
+      "| Logged in as #{row['username']}"
     else
       "| Invalid password"
     end

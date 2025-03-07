@@ -110,10 +110,7 @@ class ChatController
       send_text(conn, "Commande /qt non implémentée.")
     when '/quit'
       chat_room.remove_client(username)
-      if !is_websocket?(conn)
-        # gRPC => close le flux
-        conn.close
-      end
+      conn.close
     when '/color'
       new_color = parts[1]
       if new_color.nil?
@@ -163,7 +160,7 @@ class ChatController
       chat_room.broadcast_special(special_msg)
     when '/register'
       email = parts[1]
-      pass = parts[2]
+      pass  = parts[2]
       new_user = parts[3]
       if email.nil? || pass.nil? || new_user.nil?
         send_text(conn, "Usage: /register <email> <password> <pseudo>")
@@ -173,7 +170,7 @@ class ChatController
       send_text(conn, register_result)
     when '/login'
       email = parts[1]
-      pass = parts[2]
+      pass  = parts[2]
       if email.nil? || pass.nil?
         send_text(conn, "Usage: /login <email> <password>")
         return
@@ -186,9 +183,6 @@ class ChatController
         chat_room.add_client(conn, username)
       end
       send_text(conn, login_result)
-    # -----------------------------
-    # Exemple: /clear pour vider logs
-    # -----------------------------
     when '/clear'
       chat_room.history.clear
       chat_room.broadcast_special("CLEAR_LOGS|")
@@ -229,9 +223,9 @@ class ChatController
     return "| Missing fields" if email.empty? || password.empty? || user.empty?
     pd = BCrypt::Password.create(password)
     begin
-      c = db_connection
-      c.exec_params("INSERT INTO users (email, username, password_digest) VALUES ($1, $2, $3)", [email, user, pd])
-      c.close
+      conn = db_connection
+      conn.exec_params("INSERT INTO users (email, username, password_digest) VALUES ($1, $2, $3)", [email, user, pd])
+      conn.close
       "| User registered"
     rescue PG::UniqueViolation
       "| Email or username used"
@@ -243,9 +237,9 @@ class ChatController
   def login_account(email, password)
     return "| Missing fields" if email.empty? || password.empty?
     begin
-      c = db_connection
-      r = c.exec_params("SELECT * FROM users WHERE email=$1", [email])
-      c.close
+      conn = db_connection
+      r = conn.exec_params("SELECT * FROM users WHERE email=$1", [email])
+      conn.close
       return "| No account" if r.ntuples == 0
       d = r[0]['password_digest']
       u = r[0]['username']
