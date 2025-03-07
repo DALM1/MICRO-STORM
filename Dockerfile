@@ -2,8 +2,7 @@ FROM golang:1.20
 
 WORKDIR /app
 
-# Installer protoc (compilateur Protobuf)
-RUN apt-get update && apt-get install -y protobuf-compiler
+ENV GO111MODULE=on
 
 COPY go.mod go.sum ./
 RUN go mod download
