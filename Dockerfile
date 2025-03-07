@@ -1,15 +1,11 @@
 FROM golang:1.20
 
-WORKDIR /app
+ENV GO111MODULE=off
 
-ENV GO111MODULE=on
-
-COPY go.mod go.sum ./
-RUN go mod download
+WORKDIR /go/src/storm
 
 COPY . .
-
-RUN go build
+RUN go build -o server .
 
 EXPOSE 3630
 EXPOSE 4567
