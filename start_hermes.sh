@@ -4,6 +4,8 @@ cd /root/MICRO-STORM
 
 docker rm -f hermes_container 2>/dev/null
 
+docker run protoc --go_out=. --go-grpc_out=. chatpb/chat.proto 2>/dev/null
+
 docker build -t hermes .
 
 docker run -d --name hermes_container \
