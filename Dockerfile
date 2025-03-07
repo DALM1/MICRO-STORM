@@ -2,17 +2,14 @@ FROM golang:1.20
 
 WORKDIR /app
 
-# Copier les fichiers go.mod et go.sum et télécharger les dépendances
-COPY go.mod go.sum ./
-RUN go mod download
+RUN apt-get update && apt-get install -y protobuf-compiler
 
-# Copier l'intégralité du projet
+COPY go.mod go.sum ./
+
 COPY . .
 
-# Générer les fichiers protobuf (si ce n'est pas déjà fait localement)
 RUN protoc --go_out=. --go-grpc_out=. chatpb/chat.proto
 
-# Compiler le projet
 RUN go build -o server .
 
 EXPOSE 3630
