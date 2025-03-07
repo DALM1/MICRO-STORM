@@ -9,7 +9,7 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -mod=mod -o server .
+RUN go build
 
 EXPOSE 3630
 EXPOSE 4567
