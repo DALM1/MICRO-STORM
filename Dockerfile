@@ -1,22 +1,22 @@
-FROM ruby:3.2
-
-RUN apt-get update && apt-get install -y \
-    build-essential autoconf automake libtool pkg-config \
-    libssl-dev zlib1g-dev libprotobuf-dev protobuf-compiler
+FROM golang:1.20
 
 WORKDIR /app
 
-COPY Gemfile Gemfile.lock ./
+# Copier les fichiers go.mod et go.sum et télécharger les dépendances
+COPY go.mod go.sum ./
+RUN go mod download
 
-RUN gem update --system
-RUN gem install bundler -v "~>2.4"
+# Copier l'intégralité du projet
+COPY . .
 
-RUN bundle install --jobs=4 --retry=3 --no-document
+# Générer les fichiers protobuf (si ce n'est pas déjà fait localement)
+RUN protoc --go_out=. --go-grpc_out=. chatpb/chat.proto
 
-COPY . /app
+# Compiler le projet
+RUN go build -o server .
 
 EXPOSE 3630
 EXPOSE 4567
 EXPOSE 50051
 
-CMD ["/bin/bash", "-c", "ruby auth_app.rb & ruby server_grpc.rb & ruby server.rb"]
+CMD ["./server"]

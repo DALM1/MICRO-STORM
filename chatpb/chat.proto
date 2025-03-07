@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package chat;
+
+option go_package = "storm/chatpb";
+
+service ChatService {
+  rpc Chat (stream ChatMessage) returns (stream ChatMessage);
+}
+
+message ChatMessage {
+  string sender = 1;
+  string content = 2;
+  string timestamp = 3;
+}
