@@ -10,8 +10,6 @@ RUN go mod download
 
 COPY . .
 
-RUN protoc --go_out=. --go-grpc_out=. chatpb/chat.proto
-
 RUN go build -mod=mod -o server .
 
 EXPOSE 3630
