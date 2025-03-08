@@ -2,7 +2,7 @@
 MICRO-STORM
 </h1>
 
-![MICRO X STORM](hermes-x-storm.png)
+![Capture d’écran 2025-03-08 à 22 33 33](https://github.com/user-attachments/assets/815bd523-668d-4025-abb1-f5903e4fa1b4)
 
 
  FONCTIONNALITÉS PRINCIPALES
