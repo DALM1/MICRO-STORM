@@ -14,10 +14,11 @@ class ChatRoom
   def add_client(driver, username)
     if @banned_users.include?(username)
       driver.text("⚠️ Vous êtes banni de ce thread")
-      return
+      return false
     end
     @clients[username] = driver
     broadcast_message("#{username} joined the thread", 'Server')
+    return true
   end
 
   def remove_client(username)
@@ -41,6 +42,7 @@ class ChatRoom
   def direct_message(sender, recipient, message)
     if @clients.key?(recipient)
       @clients[recipient].text("W (private) | #{sender}] | #{message}")
+      @clients[sender].text("W (private) to #{recipient} | #{message}")
     else
       @clients[sender].text("⚠️ L'utilisateur #{recipient} n'est pas dans ce thread")
     end
