@@ -280,8 +280,6 @@ class ChatController
       return "| No account" if result.empty?
 
       user_data = result[0]
-      # SQLite3 retourne un tableau, donc on accède aux colonnes par index
-      # [0]=id, [1]=email, [2]=username, [3]=password_digest
       password_digest = user_data[3]
       username = user_data[2]
 
