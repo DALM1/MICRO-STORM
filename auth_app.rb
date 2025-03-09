@@ -46,13 +46,13 @@ SQL
 db.close
 
 FileUtils.mkdir_p('public/uploads')
-puts "Dossier d'upload créé public/uploads"
+puts "Dossier d'upload créé: public/uploads"
 
 begin
   FileUtils.chmod(0755, 'public/uploads')
   puts "Permissions du dossier d'upload mises à jour: 755"
 rescue => e
-  puts "⚠️ Avertissement impossible de modifier les permissions du dossier #{e.message}"
+  puts "Avertissement: impossible de modifier les permissions du dossier: #{e.message}"
 end
 
 set :public_folder, File.dirname(__FILE__) + '/public'
@@ -99,7 +99,7 @@ post '/register' do
   rescue SQLite3::ConstraintException
     "| Email or username already used"
   rescue => ex
-    "| Error register: #{ex.message}"
+    "| Error register #{ex.message}"
   end
 end
 
@@ -157,10 +157,10 @@ post '/upload' do
     if File.exist?(path)
       puts "Fichier vérifié et existe dans #{path}"
     else
-      puts "ERREUR Le fichier n'a pas été correctement enregistré dans: #{path}"
+      puts "ERREUR: Le fichier n'a pas été correctement enregistré dans: #{path}"
     end
 
-    file_url = "http://#{request.host}:#{request.port}/uploads/#{safe_filename}"
+    file_url = "http://195.35.1.108:#{request.port}/uploads/#{safe_filename}"
 
     puts "URL générée pour le fichier #{file_url}"
 
@@ -168,15 +168,16 @@ post '/upload' do
       success: true,
       url: file_url,
       filename: filename,
+      type: file[:type] || detect_mime_type(path),
       path: path,
       size: File.size(path)
     }
 
-    puts "Réponse JSON: #{response.to_json}"
+    puts "Réponse JSON #{response.to_json}"
     return response.to_json
 
   rescue => e
-    puts "ERREUR UPLOAD: #{e.message}"
+    puts "ERREUR UPLOAD #{e.message}"
     puts e.backtrace.join("\n")
     { success: false, error: e.message }.to_json
   end
@@ -204,5 +205,94 @@ get '/check-file' do
     }.to_json
   rescue => e
     { success: false, error: e.message }.to_json
+  end
+end
+
+get '/test-upload-access' do
+  content_type :html
+
+  upload_dir = File.join(settings.public_folder, 'uploads')
+
+  unless Dir.exist?(upload_dir)
+    return "Le dossier d'uploads n'existe pas #{upload_dir}"
+  end
+
+  files = Dir.entries(upload_dir).reject { |f| f == '.' || f == '..' }
+
+  if files.empty?
+    return "Aucun fichier dans le dossier d'uploads."
+  end
+
+  html = <<-HTML
+  <html>
+  <head>
+    <title>Test des fichiers uploadés</title>
+    <style>
+      body { font-family: sans-serif; margin: 20px; }
+      .file-entry { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+      img { max-width: 300px; max-height: 200px; }
+    </style>
+  </head>
+  <body>
+    <h1>Fichiers uploadés (#{files.size})</h1>
+    <div>Chemin complet: #{File.expand_path(upload_dir)}</div>
+    <div>URL de base: http://195.35.1.108:#{request.port}/uploads/</div>
+    <hr>
+  HTML
+
+  files.each do |filename|
+    file_path = File.join(upload_dir, filename)
+    file_url = "http://195.35.1.108:#{request.port}/uploads/#{filename}"
+    file_size = File.size(file_path) rescue 'Inconnu'
+    file_type = File.extname(filename).downcase
+
+    html += <<-HTML
+    <div class="file-entry">
+      <div><strong>Nom:</strong> #{filename}</div>
+      <div><strong>Taille:</strong> #{file_size} bytes</div>
+      <div><strong>URL:</strong> <a href="#{file_url}" target="_blank">#{file_url}</a></div>
+      <div><strong>Test d'accessibilité:</strong>
+    HTML
+
+    if ['.jpg', '.jpeg', '.png', '.gif', '.webp'].include?(file_type)
+      html += <<-HTML
+        <img src="#{file_url}" alt="Prévisualisation">
+      HTML
+    end
+
+    html += <<-HTML
+      </div>
+    </div>
+    HTML
+  end
+
+  html += "</body></html>"
+
+  return html
+end
+
+def detect_mime_type(file_path)
+  extension = File.extname(file_path).downcase
+  case extension
+  when '.jpg', '.jpeg'
+    'image/jpeg'
+  when '.png'
+    'image/png'
+  when '.gif'
+    'image/gif'
+  when '.pdf'
+    'application/pdf'
+  when '.doc', '.docx'
+    'application/msword'
+  when '.xls', '.xlsx'
+    'application/vnd.ms-excel'
+  when '.zip'
+    'application/zip'
+  when '.mp3'
+    'audio/mpeg'
+  when '.mp4'
+    'video/mp4'
+  else
+    'application/octet-stream'
   end
 end

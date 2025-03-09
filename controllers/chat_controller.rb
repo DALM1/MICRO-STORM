@@ -300,8 +300,8 @@ class ChatController
         return nil
       end
 
-      unless image_url =~ /\A(http|https):\/\/[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/ix
-        driver.text("⚠️ Format d'URL invalide. Utilisez une URL complète (ex: https://example.com/image.jpg)")
+      unless image_url =~ /\A(http|https):\/\//i
+        driver.text("⚠️ Format d'URL invalide. L'URL doit commencer par http:// ou https://")
         return nil
       end
 
@@ -315,8 +315,8 @@ class ChatController
         return nil
       end
 
-      unless file_url =~ /\A(http|https):\/\/[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/ix
-        driver.text("⚠️ Format d'URL invalide. Utilisez une URL complète")
+      unless file_url =~ /\A(http|https):\/\//i
+        driver.text("⚠️ Format d'URL invalide. L'URL doit commencer par http:// ou https://")
         return nil
       end
 
@@ -331,6 +331,7 @@ class ChatController
         when '.mp4', '.avi', '.mov', '.wmv' then '🎬'
         else '📁'
       end
+
 
       chat_room.broadcast_message("#{icon} <a href=\"#{file_url}\" target=\"_blank\" class=\"file-link\">#{file_name}</a>", username)
 
@@ -476,7 +477,7 @@ class ChatController
       username = user_data[2]
 
       if BCrypt::Password.new(password_digest) == password
-        "| Logged in as #{username}."
+        "| Logged in as #{username}"
       else
         "| Invalid password"
       end
