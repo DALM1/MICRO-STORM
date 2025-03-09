@@ -142,9 +142,9 @@ class ChatRoom
   private
 
   def linkify(text)
-    processed_urls = {}
-
     text = text.gsub(/[&<>"]/) { |match| {'&' => '&amp;', '<' => '&lt;', '>' => '&gt;', '"' => '&quot;'}[match] }
+
+    processed_urls = {}
 
     text = text.gsub(%r{(https?://\S+\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?\S*)?)}i) do |url|
       unless processed_urls[url]
@@ -180,22 +180,27 @@ class ChatRoom
       end
     end
 
-    text = text.gsub(%r{(https?://[^\s"]+)}i) do |url|
+    text = text.gsub(%r{(https?://(?:www\.)?soundcloud\.com/[^\s"]+)}i) do |url|
+      unless processed_urls[url]
+        processed_urls[url] = true
+        escaped_url = url.gsub('"', '%22')
+        %Q{<a href="#{url}" target="_blank">#{url}</a><br>
+           <iframe width="300" height="166" scrolling="no" frameborder="no"
+           src="https://w.soundcloud.com/player/?url=#{escaped_url}"></iframe>}
+      else
+        url
+      end
+    end
+
+    text = text.gsub(%r{(https?://[^\s"<>]+)}i) do |url|
       if !processed_urls[url] && !url.include?('<a href=')
         processed_urls[url] = true
-
-        if url.include?('soundcloud.com')
-          %Q{<a href="#{url}" target="_blank">#{url}</a><br>
-             <iframe width="300" height="166" scrolling="no" frameborder="no"
-             src="https://w.soundcloud.com/player/?url=#{url.gsub('"', '%22')}"></iframe>}
-        else
-          %Q{<a href="#{url}" target="_blank">#{url}</a><br>
-             <div class="link-preview" style="border: 1px solid #ccc; padding: 10px;
-             margin: 5px 0; border-radius: 5px; background-color: rgba(0,0,0,0.3);">
-               <div class="preview-title" style="font-weight: bold;">Aperçu de lien</div>
-               <div class="preview-content">Cliquez pour ouvrir</div>
-             </div>}
-        end
+        %Q{<a href="#{url}" target="_blank">#{url}</a><br>
+           <div class="link-preview" style="border: 1px solid #555; padding: 8px;
+           margin: 5px 0; border-radius: 5px; background-color: rgba(0,0,0,0.3);">
+             <div class="preview-title" style="font-weight: bold;">Aperçu de lien</div>
+             <div class="preview-content">#{url}</div>
+           </div>}
       else
         url
       end

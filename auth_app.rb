@@ -4,11 +4,14 @@ require 'bcrypt'
 require 'fileutils'
 require 'json'
 
+# Configuration du serveur
 set :bind, '0.0.0.0'
 set :port, 4567
 
+# Activer les logs de débogage
 enable :logging
 
+# Configuration CORS
 before do
   response.headers['Access-Control-Allow-Origin'] = '*'
   response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
@@ -18,9 +21,11 @@ before do
     halt 200
   end
 
+  # Log de débogage
   puts "#{request.request_method} #{request.path_info} - Params: #{params.inspect}"
 end
 
+# Gestionnaire d'erreurs
 error do |e|
   puts "ERREUR: #{e.message}"
   puts e.backtrace.join("\n")
@@ -28,12 +33,14 @@ error do |e|
   { success: false, error: e.message }.to_json
 end
 
+# Configuration de la base de données
 DB_FILE = "auth.db"
 
 def db_connection
   SQLite3::Database.new(DB_FILE)
 end
 
+# Initialisation de la base de données
 db = db_connection
 db.execute <<-SQL
   CREATE TABLE IF NOT EXISTS users (
@@ -45,9 +52,11 @@ db.execute <<-SQL
 SQL
 db.close
 
+# Créer un dossier pour les uploads s'il n'existe pas
 FileUtils.mkdir_p('public/uploads')
 puts "Dossier d'upload créé: public/uploads"
 
+# S'assurer que le dossier a les bonnes permissions
 begin
   FileUtils.chmod(0755, 'public/uploads')
   puts "Permissions du dossier d'upload mises à jour: 755"
@@ -55,7 +64,34 @@ rescue => e
   puts "Avertissement: impossible de modifier les permissions du dossier: #{e.message}"
 end
 
+# Configuration pour servir les fichiers statiques
 set :public_folder, File.dirname(__FILE__) + '/public'
+
+# Page d'accueil pour tester le serveur
+get '/' do
+  content_type :json
+  {
+    status: "running",
+    timestamp: Time.now.to_i,
+    upload_path: File.expand_path('public/uploads')
+  }.to_json
+end
+
+# Page de test d'upload simple
+get '/test-upload' do
+  content_type :html
+  "
+  <html>
+  <body>
+    <h1>Test d'upload</h1>
+    <form action='/upload' method='post' enctype='multipart/form-data'>
+      <input type='file' name='file'>
+      <input type='submit' value='Upload'>
+    </form>
+  </body>
+  </html>
+  "
+end
 
 post '/register' do
   content_type :text
@@ -105,16 +141,14 @@ post '/login' do
   end
 end
 
-get '/' do
-  content_type :json
-  { status: "running", timestamp: Time.now.to_i }.to_json
-end
-
 post '/upload' do
   content_type :json
 
+  puts "Démarrage de l'upload de fichier..."
+
   begin
     unless params[:file] && params[:file][:tempfile] && params[:file][:filename]
+      puts "Aucun fichier reçu dans la requête"
       return { success: false, error: "Aucun fichier reçu" }.to_json
     end
 
@@ -122,27 +156,65 @@ post '/upload' do
     filename = file[:filename]
     tempfile = file[:tempfile]
 
-    puts "Fichier reçu: #{filename}, taille: #{File.size(tempfile.path)} bytes"
+    puts "Fichier reçu: #{filename}, type: #{file[:type]}, taille: #{File.size(tempfile.path)} bytes"
 
     timestamp = Time.now.to_i
     safe_filename = "#{timestamp}_#{filename.gsub(/[^a-zA-Z0-9\.\-]/, '_')}"
 
-    path = "public/uploads/#{safe_filename}"
+    path = File.join(settings.public_folder, 'uploads', safe_filename)
 
     FileUtils.cp(tempfile.path, path)
     puts "Fichier enregistré: #{path}"
 
-    file_url = "http://195.35.1.108:4567/uploads/#{safe_filename}"
+    if File.exist?(path)
+      puts "Fichier vérifié et existe dans: #{path}"
+    else
+      puts "ERREUR: Le fichier n'a pas été correctement enregistré dans: #{path}"
+    end
 
-    {
+    file_url = "http://#{request.host}:#{request.port}/uploads/#{safe_filename}"
+
+    puts "URL générée pour le fichier: #{file_url}"
+
+    response = {
       success: true,
       url: file_url,
       filename: filename,
+      path: path,
       size: File.size(path)
-    }.to_json
+    }
+
+    puts "Réponse JSON: #{response.to_json}"
+    return response.to_json
+
   rescue => e
     puts "ERREUR UPLOAD: #{e.message}"
     puts e.backtrace.join("\n")
+    { success: false, error: e.message }.to_json
+  end
+end
+
+get '/check-file' do
+  content_type :json
+
+  path = params[:path]
+
+  unless path
+    return { success: false, error: "Chemin non spécifié" }.to_json
+  end
+
+  begin
+    full_path = File.join(settings.public_folder, path)
+    exists = File.exist?(full_path)
+
+    {
+      success: true,
+      path: full_path,
+      exists: exists,
+      size: exists ? File.size(full_path) : nil,
+      readable: exists ? File.readable?(full_path) : false
+    }.to_json
+  rescue => e
     { success: false, error: e.message }.to_json
   end
 end
