@@ -296,7 +296,7 @@ class ChatController
     when '/image'
       image_url = parts[1]
       if image_url.nil?
-        driver.text("Usage /image <url>")
+        driver.text("Usage: /image <url>")
         return nil
       end
 
@@ -308,7 +308,7 @@ class ChatController
       chat_room.broadcast_message("<img src=\"#{image_url}\" alt=\"image\" style=\"max-width: 500px; max-height: 400px;\">", username)
 
     when '/upload'
-      driver.text("| Demande d'upload de fichier...")
+      driver.text("| 📁 Demande d'upload de fichier...")
       special_msg = "REQUEST_FILE_UPLOAD|"
       driver.special(special_msg)
 
@@ -465,7 +465,7 @@ class ChatController
       db.close
       return result.empty? ? nil : result[0][0]
     rescue => ex
-      puts "Erreur lors de la récupération de l'ID utilisateur #{ex.message}"
+      puts "Erreur lors de la récupération de l'ID utilisateur: #{ex.message}"
       return nil
     end
   end
@@ -488,7 +488,7 @@ class ChatController
       db.close
       return true
     rescue => ex
-      puts "| 🔴 Erreur lors de la sauvegarde des préférences #{ex.message}"
+      puts "| 🔴 Erreur lors de la sauvegarde des préférences: #{ex.message}"
       return false
     end
   end

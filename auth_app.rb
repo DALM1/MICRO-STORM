@@ -22,7 +22,7 @@ before do
 end
 
 error do |e|
-  puts "| 🔴 ERREUR #{e.message}"
+  puts "ERREUR: #{e.message}"
   puts e.backtrace.join("\n")
   content_type :json
   { success: false, error: e.message }.to_json
@@ -46,7 +46,7 @@ SQL
 db.close
 
 FileUtils.mkdir_p('public/uploads')
-puts "Dossier d'upload créé public/uploads"
+puts "Dossier d'upload créé: public/uploads"
 
 begin
   FileUtils.chmod(0755, 'public/uploads')
@@ -101,7 +101,7 @@ post '/login' do
       "| Invalid password"
     end
   rescue => ex
-    "| Error login #{ex.message}"
+    "| Error login: #{ex.message}"
   end
 end
 
@@ -122,7 +122,7 @@ post '/upload' do
     filename = file[:filename]
     tempfile = file[:tempfile]
 
-    puts "| Fichier reçu #{filename}, taille #{File.size(tempfile.path)} bytes"
+    puts "Fichier reçu: #{filename}, taille: #{File.size(tempfile.path)} bytes"
 
     timestamp = Time.now.to_i
     safe_filename = "#{timestamp}_#{filename.gsub(/[^a-zA-Z0-9\.\-]/, '_')}"
@@ -130,7 +130,7 @@ post '/upload' do
     path = "public/uploads/#{safe_filename}"
 
     FileUtils.cp(tempfile.path, path)
-    puts "| Fichier enregistré #{path}"
+    puts "Fichier enregistré: #{path}"
 
     file_url = "http://195.35.1.108:4567/uploads/#{safe_filename}"
 
@@ -141,7 +141,7 @@ post '/upload' do
       size: File.size(path)
     }.to_json
   rescue => e
-    puts "| 🔴 ERREUR UPLOAD #{e.message}"
+    puts "ERREUR UPLOAD: #{e.message}"
     puts e.backtrace.join("\n")
     { success: false, error: e.message }.to_json
   end
