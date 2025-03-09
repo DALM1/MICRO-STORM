@@ -121,7 +121,7 @@ class ChatRoom
       "/quit                        - Quitter"
     ]
 
-    lines.map { |line| "$ #{line}" }.join("\n")
+    lines.map { |line| " #{line}" }.join("\n")
   end
 
   private
