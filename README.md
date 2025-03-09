@@ -1,5 +1,5 @@
 <h1 align="center">
-STORM MICROSERVICE™
+STORM MICRO SERVICE™
 </h1>
 
 ![Capture d’écran 2025-03-08 à 22 33 33](https://github.com/DALM1/STORM-MICRO/releases/download/1.0/Capture.d.ecran.2025-03-09.a.19.51.37.png)
