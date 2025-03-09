@@ -449,7 +449,7 @@ class ChatController
       username = user_data[2]
 
       if BCrypt::Password.new(password_digest) == password
-        "| Logged in as #{username}."
+        "| Logged in as #{username}"
       else
         "| Invalid password"
       end
