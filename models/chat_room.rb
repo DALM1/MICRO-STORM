@@ -59,12 +59,6 @@ class ChatRoom
     @client_colors[username]
   end
 
-  def preview_links(message)
-    message.gsub(%r{https?://\S+}) do |url|
-      "<a href='#{url}' target='_blank'>#{url}</a>"
-    end
-  end
-
   def broadcast_message(message, sender)
     timestamp = (Time.now + 3600).strftime('%H:%M')
     color = @client_colors[sender] || '#FFFFFF'
@@ -77,7 +71,7 @@ class ChatRoom
       begin
         driver.text(formatted_message)
       rescue IOError => e
-        puts "⚠️ Erreur d'envoi de message | #{e.message}".yellow
+        puts "⚠️ Erreur d'envoi de message | #{e.message}"
       end
     end
   end
@@ -95,7 +89,7 @@ class ChatRoom
       begin
         driver.special(msg)
       rescue IOError => e
-        puts "⚠️ #{e.message}".yellow
+        puts "⚠️ #{e.message}"
       end
     end
   end
@@ -150,8 +144,8 @@ class ChatRoom
     text = text.gsub(%r{(https?://\S+\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?\S*)?)}i) do |url|
       unless processed_urls[url]
         processed_urls[url] = true
-        %Q{<a href="#{url}" target="_blank" rel="noopener noreferrer">#{url}</a><br>
-           <img src="#{url}" alt="image" style="max-width: 300px; max-height: 200px;">}
+        clean_url = url.strip
+        %Q{<a href="#{clean_url}" target="_blank" rel="noopener noreferrer">#{clean_url}</a><br><img src="#{clean_url}" alt="image" style="max-width: 300px; max-height: 200px;">}
       else
         url
       end
@@ -161,9 +155,8 @@ class ChatRoom
       unless processed_urls[url]
         processed_urls[url] = true
         video_id = $2
-        %Q{<a href="#{url}" target="_blank" rel="noopener noreferrer">#{url}</a><br>
-           <iframe width="300" height="169" src="https://www.youtube.com/embed/#{video_id}"
-           frameborder="0" allowfullscreen></iframe>}
+        clean_url = url.strip
+        %Q{<a href="#{clean_url}" target="_blank" rel="noopener noreferrer">#{clean_url}</a><br><iframe width="300" height="169" src="https://www.youtube.com/embed/#{video_id}" frameborder="0" allowfullscreen></iframe>}
       else
         url
       end
@@ -173,9 +166,8 @@ class ChatRoom
       unless processed_urls[url]
         processed_urls[url] = true
         video_id = $2
-        %Q{<a href="#{url}" target="_blank" rel="noopener noreferrer">#{url}</a><br>
-           <iframe width="300" height="169" src="https://www.youtube.com/embed/#{video_id}"
-           frameborder="0" allowfullscreen></iframe>}
+        clean_url = url.strip
+        %Q{<a href="#{clean_url}" target="_blank" rel="noopener noreferrer">#{clean_url}</a><br><iframe width="300" height="169" src="https://www.youtube.com/embed/#{video_id}" frameborder="0" allowfullscreen></iframe>}
       else
         url
       end
@@ -184,10 +176,9 @@ class ChatRoom
     text = text.gsub(%r{(https?://(?:www\.)?soundcloud\.com/[^\s"]+)}i) do |url|
       unless processed_urls[url]
         processed_urls[url] = true
-        escaped_url = url.gsub('"', '%22')
-        %Q{<a href="#{url}" target="_blank" rel="noopener noreferrer">#{url}</a><br>
-           <iframe width="300" height="166" scrolling="no" frameborder="no"
-           src="https://w.soundcloud.com/player/?url=#{escaped_url}"></iframe>}
+        clean_url = url.strip
+        escaped_url = clean_url.gsub('"', '%22')
+        %Q{<a href="#{clean_url}" target="_blank" rel="noopener noreferrer">#{clean_url}</a><br><iframe width="300" height="166" scrolling="no" frameborder="no" src="https://w.soundcloud.com/player/?url=#{escaped_url}"></iframe>}
       else
         url
       end
@@ -196,12 +187,8 @@ class ChatRoom
     text = text.gsub(%r{(https?://[^\s"<>]+)}i) do |url|
       if !processed_urls[url] && !url.include?('<a href=')
         processed_urls[url] = true
-        %Q{<a href="#{url}" target="_blank" rel="noopener noreferrer">#{url}</a><br>
-           <div class="link-preview" style="border: 1px solid #555; padding: 8px;
-           margin: 5px 0; border-radius: 5px; background-color: rgba(0,0,0,0.3);">
-             <div class="preview-title" style="font-weight: bold;">Aperçu de lien</div>
-             <div class="preview-content">#{url}</div>
-           </div>}
+        clean_url = url.strip
+        %Q{<a href="#{clean_url}" target="_blank" rel="noopener noreferrer">#{clean_url}</a>}
       else
         url
       end

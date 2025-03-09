@@ -294,7 +294,7 @@ class ChatController
       end
 
     when '/image'
-      image_url = parts[1]
+      image_url = parts[1]&.strip
       if image_url.nil?
         driver.text("Usage /image <url>")
         return nil
