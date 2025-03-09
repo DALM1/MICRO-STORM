@@ -1,7 +1,6 @@
 source 'https://rubygems.org'
 gem 'sqlite3'
 gem 'sinatra'
-gem 'pg'
 gem 'bcrypt'
 gem 'colorize'
 gem 'websocket-driver'
