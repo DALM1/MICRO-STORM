@@ -1,5 +1,6 @@
 class ChatRoom
   attr_accessor :name, :password, :clients, :creator, :history, :banned_users, :client_colors
+  attr_accessor :current_music_url, :current_music_user
 
   def initialize(name, password=nil, creator=nil)
     @name = name
@@ -9,6 +10,8 @@ class ChatRoom
     @history = []
     @banned_users = []
     @client_colors = {}
+    @current_music_url = nil
+    @current_music_user = nil
   end
 
   def add_client(driver, username)
@@ -52,6 +55,10 @@ class ChatRoom
     @client_colors[username] = color
   end
 
+  def get_user_color(username)
+    @client_colors[username]
+  end
+
   def preview_links(message)
     message.gsub(%r{https?://\S+}) do |url|
       "<a href='#{url}' target='_blank'>#{url}</a>"
@@ -59,7 +66,7 @@ class ChatRoom
   end
 
   def broadcast_message(message, sender)
-    timestamp = Time.now.strftime('%H:%M')
+    timestamp = (Time.now + 3600).strftime('%H:%M')
     color = @client_colors[sender] || '#FFFFFF'
     message = linkify(message)
 
@@ -86,7 +93,7 @@ class ChatRoom
   def broadcast_special(msg)
     @clients.each_value do |driver|
       begin
-        driver.text(msg)
+        driver.special(msg)
       rescue IOError => e
         puts "⚠️ #{e.message}".yellow
       end
@@ -112,12 +119,20 @@ class ChatRoom
       "/dm <pseudo> <msg>           - Message privé",
       "/color <couleur>             - Changer la couleur de votre pseudo",
       "/background <url>            - Changer le background (pour tout le monde)",
+      "/music <url>                 - Partager de la musique (threads privés uniquement)",
+      "/playmusic                   - Écouter la musique partagée",
+      "/stopmusic                   - Arrêter la lecture de la musique",
+      "/volume <niveau>             - Régler le volume (0-100)",
+      "/image <url>                 - Partager une image via son URL",
+      "/upload                      - Envoyer un fichier (image, document)",
       "/powerto <pseudo>            - Donner le rôle de créateur",
       "/typo <font_family>          - Changer la police de tout le chat",
       "/textcolor <couleur>         - Changer la couleur de tout le texte",
       "/register <email> <pass> <pseudo> - Créer un compte",
       "/login <email> <pass>        - Se connecter",
       "/clear                       - Effacer l'historique",
+      "/listcolors                  - Afficher la liste des noms de couleurs disponibles",
+      "/savepref                    - Sauvegarder vos préférences",
       "/quit                        - Quitter"
     ]
 
@@ -127,8 +142,16 @@ class ChatRoom
   private
 
   def linkify(text)
+    text = text.gsub(%r{(https?://\S+\.(jpg|jpeg|png|gif|webp)(\?\S*)?)}) do |url|
+      %Q{<a href="#{url}" target="_blank">#{url}</a><br><img src="#{url}" alt="image" style="max-width: 300px; max-height: 200px;">}
+    end
+
     text.gsub(%r{(https?://\S+)}) do |url|
-      %Q{<a href="#{url}" target="_blank">#{url}</a>}
+      if url.include?('<a href=')
+        url
+      else
+        %Q{<a href="#{url}" target="_blank">#{url}</a>}
+      end
     end
   end
 end

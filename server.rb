@@ -18,6 +18,10 @@ loop do
     begin
       driver = WebSocket::Driver.server(socket)
 
+      driver.define_singleton_method(:special) do |msg|
+        self.text(msg)
+      end
+
       driver.instance_variable_set(:@username, nil)
       driver.instance_variable_set(:@current_room, nil)
 

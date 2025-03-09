@@ -270,7 +270,7 @@ class ChatController
     when '/stopmusic'
       special_msg = "STOP_MUSIC|"
       driver.special(special_msg)
-      driver.text("🎵 Lecture de la musique arrêtée")
+      driver.text("🎵 Lecture de la musique arrêtée")
 
     when '/volume'
       volume_level = parts[1]
@@ -292,6 +292,25 @@ class ChatController
       rescue ArgumentError
         driver.text("⚠️ Le volume doit être un nombre entre 0 et 100")
       end
+
+    when '/image'
+      image_url = parts[1]
+      if image_url.nil?
+        driver.text("Usage: /image <url>")
+        return nil
+      end
+
+      unless image_url =~ /\A(http|https):\/\/[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/ix
+        driver.text("⚠️ Format d'URL invalide. Utilisez une URL complète (ex: https://example.com/image.jpg)")
+        return nil
+      end
+
+      chat_room.broadcast_message("<img src=\"#{image_url}\" alt=\"image\" style=\"max-width: 500px; max-height: 400px;\">", username)
+
+    when '/upload'
+      driver.text("| Demande d'upload de fichier...")
+      special_msg = "REQUEST_FILE_UPLOAD|"
+      driver.special(special_msg)
 
     when '/powerto'
       target = parts[1]

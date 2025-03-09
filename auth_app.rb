@@ -1,6 +1,7 @@
 require 'sinatra'
 require 'sqlite3'
 require 'bcrypt'
+require 'fileutils'
 
 set :bind, '0.0.0.0'
 set :port, 4567
@@ -21,6 +22,8 @@ db.execute <<-SQL
   );
 SQL
 db.close
+
+FileUtils.mkdir_p('public/uploads')
 
 post '/register' do
   e = params[:email].to_s.strip
@@ -63,5 +66,32 @@ post '/login' do
     end
   rescue => ex
     "| Error login: #{ex.message}"
+  end
+end
+
+post '/upload' do
+  content_type :json
+
+  unless params[:file] && params[:file][:tempfile] && params[:file][:filename]
+    return { success: false, error: "Aucun fichier reçu" }.to_json
+  end
+
+  file = params[:file]
+  filename = file[:filename]
+  tempfile = file[:tempfile]
+
+  timestamp = Time.now.to_i
+  safe_filename = "#{timestamp}_#{filename.gsub(/[^a-zA-Z0-9\.\-]/, '_')}"
+
+  path = "public/uploads/#{safe_filename}"
+
+  begin
+    FileUtils.cp(tempfile.path, path)
+
+    file_url = "#{request.base_url}/uploads/#{safe_filename}"
+
+    { success: true, url: file_url }.to_json
+  rescue => e
+    { success: false, error: e.message }.to_json
   end
 end
