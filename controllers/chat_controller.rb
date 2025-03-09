@@ -296,7 +296,7 @@ class ChatController
     when '/image'
       image_url = parts[1]
       if image_url.nil?
-        driver.text("Usage: /image <url>")
+        driver.text("Usage /image <url>")
         return nil
       end
 
@@ -311,7 +311,7 @@ class ChatController
       file_url = parts[1]
       file_name = parts[2] || "fichier partagé"
       if file_url.nil?
-        driver.text("Usage: /file <url> [nom_du_fichier]")
+        driver.text("Usage /file <url> [nom_du_fichier]")
         return nil
       end
 
