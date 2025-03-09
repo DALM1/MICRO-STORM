@@ -72,7 +72,7 @@ class ChatController
       SQL
       db.close
     rescue => ex
-      puts "Erreur lors de l'initialisation de la base de données #{ex.message}"
+      puts "| 🔴 Erreur lors de l'initialisation de la base de données #{ex.message}"
     end
   end
 
