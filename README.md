@@ -2,7 +2,7 @@
 STORM MICRO
 </h1>
 
-![Capture d’écran 2025-03-08 à 22 33 33](https://github.com/user-attachments/assets/815bd523-668d-4025-abb1-f5903e4fa1b4)
+![Capture d’écran 2025-03-08 à 22 33 33](https://github.com/DALM1/STORM-MICRO/releases/download/1.0/Capture.d.ecran.2025-03-09.a.19.51.37.png)
 
 
  FONCTIONNALITÉS PRINCIPALES
