@@ -19,7 +19,7 @@ class ChatController
       return handle_command(message, driver, chat_room, username)
     else
       chat_room.broadcast_message(message, username)
-      return nil
+      return nil # Pas de changement de salle
     end
   end
 
@@ -44,39 +44,34 @@ class ChatController
     when '/banned'
       driver.text("Bannis: #{chat_room.banned_users.join(', ')}")
 
-    when '/cr'
-      room_name = parts[1]
-      room_pass = parts[2]
-      if room_name.nil?
-        driver.text("Usage: /cr <nom> <password>")
+    when '/register'
+      email = parts[1]
+      pass  = parts[2]
+      new_user = parts[3]
+      if email.nil? || pass.nil? || new_user.nil?
+        driver.text("Usage: /register <email> <password> <pseudo>")
         return nil
       end
-      new_room = create_room(room_name, room_pass, username)
-      driver.text("Thread #{room_name} créé.")
-      chat_room.remove_client(username)
-      new_room.add_client(driver, username)
-      return new_room
+      register_result = register_account(email, pass, new_user)
+      driver.text(register_result)
 
-    when '/cd'
-      room_name = parts[1]
-      room_pass = parts[2]
-      if room_name.nil?
-        driver.text("Usage: /cd <nom> <password>")
+    when '/login'
+      email = parts[1]
+      pass  = parts[2]
+      if email.nil? || pass.nil?
+        driver.text("Usage: /login <email> <password>")
         return nil
       end
-      if @chat_rooms.key?(room_name)
-        new_room = @chat_rooms[room_name]
-        if new_room.password.nil? || new_room.password == room_pass
-          chat_room.remove_client(username)
-          if new_room.add_client(driver, username)
-            return new_room
-          end
-        else
-          driver.text("⚠️ Mot de passe incorrect pour #{room_name}")
+      login_result = login_account(email, pass)
+      if login_result.start_with?("| Logged in as")
+        new_pseudo = login_result.split("as ")[1]
+        chat_room.remove_client(username)
+        chat_room.add_client(driver, new_pseudo)
+        if username.is_a?(String) && username.respond_to?(:replace)
+          username.replace(new_pseudo)
         end
-      else
-        driver.text("⚠️ Le thread #{room_name} n'existe pas")
       end
+      driver.text(login_result)
 
     when '/cpd'
       new_password = parts[1]
@@ -85,30 +80,6 @@ class ChatController
         driver.text("Mot de passe du thread changé")
       else
         driver.text("⚠️ Seul le créateur peut changer le password")
-      end
-
-    when '/ban'
-      user_to_ban = parts[1]
-      if user_to_ban.nil?
-        driver.text("Usage: /ban <pseudo>")
-        return nil
-      end
-      if chat_room.creator == username
-        chat_room.ban_user(user_to_ban)
-      else
-        driver.text("⚠️ Seul le créateur peut bannir")
-      end
-
-    when '/kick'
-      user_to_kick = parts[1]
-      if user_to_kick.nil?
-        driver.text("Usage: /kick <pseudo>")
-        return nil
-      end
-      if chat_room.creator == username
-        chat_room.kick_user(user_to_kick)
-      else
-        driver.text("⚠️ Seul le créateur peut kick")
       end
 
     when '/clear'
