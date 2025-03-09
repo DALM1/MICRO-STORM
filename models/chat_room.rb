@@ -62,7 +62,7 @@ class ChatRoom
   def broadcast_message(message, sender)
     timestamp = (Time.now + 3600).strftime('%H:%M')
     color = @client_colors[sender] || '#FFFFFF'
-    message = linkify(message)
+    message = escape_html(message)
 
     formatted_message = "[#{timestamp}] <span style='color: #{color}'>#{sender}</span> #{message}"
     @history << formatted_message
@@ -72,6 +72,38 @@ class ChatRoom
         driver.text(formatted_message)
       rescue IOError => e
         puts "⚠️ Erreur d'envoi de message | #{e.message}"
+      end
+    end
+  end
+
+  def broadcast_image(image_url, sender)
+    timestamp = (Time.now + 3600).strftime('%H:%M')
+    color = @client_colors[sender] || '#FFFFFF'
+
+    formatted_message = "[#{timestamp}] <span style='color: #{color}'>#{sender}</span> <img src=\"#{image_url}\" alt=\"image\" style=\"max-width: 500px; max-height: 400px;\">"
+    @history << formatted_message
+
+    @clients.each_value do |driver|
+      begin
+        driver.text(formatted_message)
+      rescue IOError => e
+        puts "⚠️ Erreur d'envoi d'image | #{e.message}"
+      end
+    end
+  end
+
+  def broadcast_formatted_message(html_content, sender)
+    timestamp = (Time.now + 3600).strftime('%H:%M')
+    color = @client_colors[sender] || '#FFFFFF'
+
+    formatted_message = "[#{timestamp}] <span style='color: #{color}'>#{sender}</span> #{html_content}"
+    @history << formatted_message
+
+    @clients.each_value do |driver|
+      begin
+        driver.text(formatted_message)
+      rescue IOError => e
+        puts "⚠️ Erreur d'envoi de message formaté | #{e.message}"
       end
     end
   end
@@ -136,64 +168,7 @@ class ChatRoom
 
   private
 
-  def linkify(text)
-    text = text.gsub(/[&<>"]/) { |match| {'&' => '&amp;', '<' => '&lt;', '>' => '&gt;', '"' => '&quot;'}[match] }
-
-    processed_urls = {}
-
-    text = text.gsub(%r{(https?://\S+\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?\S*)?)}i) do |url|
-      unless processed_urls[url]
-        processed_urls[url] = true
-        clean_url = url.strip
-        %Q{<a href="#{clean_url}" target="_blank" rel="noopener noreferrer">#{clean_url}</a><br><img src="#{clean_url}" alt="image" style="max-width: 300px; max-height: 200px;">}
-      else
-        url
-      end
-    end
-
-    text = text.gsub(%r{(https?://(?:www\.)?youtube\.com/watch\?v=([a-zA-Z0-9_-]{11}))}i) do |url|
-      unless processed_urls[url]
-        processed_urls[url] = true
-        video_id = $2
-        clean_url = url.strip
-        %Q{<a href="#{clean_url}" target="_blank" rel="noopener noreferrer">#{clean_url}</a><br><iframe width="300" height="169" src="https://www.youtube.com/embed/#{video_id}" frameborder="0" allowfullscreen></iframe>}
-      else
-        url
-      end
-    end
-
-    text = text.gsub(%r{(https?://youtu\.be/([a-zA-Z0-9_-]{11}))}i) do |url|
-      unless processed_urls[url]
-        processed_urls[url] = true
-        video_id = $2
-        clean_url = url.strip
-        %Q{<a href="#{clean_url}" target="_blank" rel="noopener noreferrer">#{clean_url}</a><br><iframe width="300" height="169" src="https://www.youtube.com/embed/#{video_id}" frameborder="0" allowfullscreen></iframe>}
-      else
-        url
-      end
-    end
-
-    text = text.gsub(%r{(https?://(?:www\.)?soundcloud\.com/[^\s"]+)}i) do |url|
-      unless processed_urls[url]
-        processed_urls[url] = true
-        clean_url = url.strip
-        escaped_url = clean_url.gsub('"', '%22')
-        %Q{<a href="#{clean_url}" target="_blank" rel="noopener noreferrer">#{clean_url}</a><br><iframe width="300" height="166" scrolling="no" frameborder="no" src="https://w.soundcloud.com/player/?url=#{escaped_url}"></iframe>}
-      else
-        url
-      end
-    end
-
-    text = text.gsub(%r{(https?://[^\s"<>]+)}i) do |url|
-      if !processed_urls[url] && !url.include?('<a href=')
-        processed_urls[url] = true
-        clean_url = url.strip
-        %Q{<a href="#{clean_url}" target="_blank" rel="noopener noreferrer">#{clean_url}</a>}
-      else
-        url
-      end
-    end
-
-    text
+  def escape_html(text)
+    text.to_s.gsub(/[&<>"]/) { |match| {'&' => '&amp;', '<' => '&lt;', '>' => '&gt;', '"' => '&quot;'}[match] }
   end
 end

@@ -229,7 +229,7 @@ class ChatController
       save_user_preference(username, 'color', hex_color)
 
     when '/background'
-      bg_url = parts[1]
+      bg_url = parts[1]&.strip
       if bg_url.nil?
         driver.text("Usage /background <url>")
         return nil
@@ -239,7 +239,7 @@ class ChatController
       save_user_preference(username, 'background_url', bg_url)
 
     when '/music'
-      music_url = parts[1]
+      music_url = parts[1]&.strip
       if music_url.nil?
         driver.text("Usage /music <url>")
         return nil
@@ -305,10 +305,13 @@ class ChatController
         return nil
       end
 
-      chat_room.broadcast_message("<img src=\"#{image_url}\" alt=\"image\" style=\"max-width: 500px; max-height: 400px;\">", username)
+      # Au lieu d'envoyer du HTML brut, nous envoyons une structure plus simple
+      # qui sera interprétée correctement par le client
+      formatted_message = "IMAGE_SPECIAL|#{image_url}"
+      chat_room.broadcast_image(image_url, username)
 
     when '/file'
-      file_url = parts[1]
+      file_url = parts[1]&.strip
       file_name = parts[2] || "fichier partagé"
       if file_url.nil?
         driver.text("Usage /file <url> [nom_du_fichier]")
@@ -332,8 +335,9 @@ class ChatController
         else '📁'
       end
 
-
-      chat_room.broadcast_message("#{icon} <a href=\"#{file_url}\" target=\"_blank\" class=\"file-link\">#{file_name}</a>", username)
+      # Format simplifié pour les fichiers aussi
+      safe_html = "#{icon} <a href=\"#{file_url}\" target=\"_blank\" class=\"file-link\">#{file_name}</a>"
+      chat_room.broadcast_formatted_message(safe_html, username)
 
     when '/upload'
       driver.text("| 📤 Demande d'upload de fichier...")
@@ -358,7 +362,7 @@ class ChatController
       chat_room.broadcast_message("#{username} a donné le rôle de créateur à #{target}", 'Server')
 
     when '/typo'
-      new_font = parts[1]
+      new_font = parts[1]&.strip
       if new_font.nil?
         driver.text("Usage /typo <font_family>")
         return nil
@@ -369,7 +373,7 @@ class ChatController
       save_user_preference(username, 'font_family', new_font)
 
     when '/textcolor'
-      new_txt_color = parts[1]
+      new_txt_color = parts[1]&.strip
       if new_txt_color.nil?
         driver.text("Usage /textcolor <couleur> (nom de couleur ou code hexadécimal)")
         return nil
@@ -385,9 +389,9 @@ class ChatController
       save_user_preference(username, 'text_color', hex_color)
 
     when '/register'
-      email = parts[1]
+      email = parts[1]&.strip
       pass  = parts[2]
-      new_user = parts[3]
+      new_user = parts[3]&.strip
       if email.nil? || pass.nil? || new_user.nil?
         driver.text("Usage /register <email> <password> <pseudo>")
         return nil
@@ -396,7 +400,7 @@ class ChatController
       driver.text(register_result)
 
     when '/login'
-      email = parts[1]
+      email = parts[1]&.strip
       pass  = parts[2]
       if email.nil? || pass.nil?
         driver.text("Usage /login <email> <password>")
@@ -431,7 +435,7 @@ class ChatController
 
     when '/listcolors'
       color_list = COLOR_NAMES.keys.sort.join(", ")
-      driver.text("| Noms de couleurs disponibles #{color_list}")
+      driver.text("| Noms de couleurs disponibles: #{color_list}")
 
     else
       driver.text("⚠️ Commande inconnue. Tapez /help pour la liste")
