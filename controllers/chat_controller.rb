@@ -305,8 +305,6 @@ class ChatController
         return nil
       end
 
-      # Au lieu d'envoyer du HTML brut, nous envoyons une structure plus simple
-      # qui sera interprétée correctement par le client
       formatted_message = "IMAGE_SPECIAL|#{image_url}"
       chat_room.broadcast_image(image_url, username)
 
@@ -335,12 +333,11 @@ class ChatController
         else '📁'
       end
 
-      # Format simplifié pour les fichiers aussi
       safe_html = "#{icon} <a href=\"#{file_url}\" target=\"_blank\" class=\"file-link\">#{file_name}</a>"
       chat_room.broadcast_formatted_message(safe_html, username)
 
     when '/upload'
-      driver.text("| 📤 Demande d'upload de fichier...")
+      driver.text("| ⚪️ Demande d'upload de fichier")
       special_msg = "REQUEST_FILE_UPLOAD|"
       driver.special(special_msg)
 
@@ -429,13 +426,38 @@ class ChatController
       driver.text("|| ⚠️ Connected to WS server")
 
     when '/savepref'
-      driver.text("| Sauvegarde de vos préférences en cours...")
+      driver.text("| ⚪️ Sauvegarde de vos préférences en cours")
       save_all_preferences(username, chat_room)
       driver.text("| Préférences sauvegardées avec succès")
 
     when '/listcolors'
       color_list = COLOR_NAMES.keys.sort.join(", ")
       driver.text("| Noms de couleurs disponibles: #{color_list}")
+
+    when '/rtc'
+      rtc_message = parts[1..-1].join(' ')
+
+      begin
+        rtc_data = JSON.parse(rtc_message)
+
+        if rtc_data['type'] && rtc_data['from'] && rtc_data['to']
+          target_user = rtc_data['to']
+
+          if chat_room.clients.key?(target_user)
+            chat_room.clients[target_user].text(rtc_message)
+
+            puts "| 📞 Message RTC de #{username} vers #{target_user}: #{rtc_data['type']}"
+          else
+            driver.text("| ⚠️ Utilisateur #{target_user} introuvable pour l'appel")
+          end
+        else
+          driver.text("| ⚠️ Format de message RTC invalide")
+        end
+      rescue JSON::ParserError => e
+        driver.text("| ⚠️ Erreur de parsing du message RTC: #{e.message}")
+      rescue => e
+        driver.text("| ⚠️ Erreur lors du traitement du message RTC: #{e.message}")
+      end
 
     else
       driver.text("⚠️ Commande inconnue. Tapez /help pour la liste")

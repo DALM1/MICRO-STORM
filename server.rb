@@ -36,7 +36,7 @@ loop do
 
       driver.on(:open) do
         puts "🟢 Nouvelle connection".green
-        driver.text("| Entrez votre username ")
+        driver.text("| Entrez votre username ").white
       end
 
       driver.on(:message) do |event|

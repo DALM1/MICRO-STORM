@@ -108,6 +108,36 @@ class ChatRoom
     end
   end
 
+  # Méthode pour relayer un message WebRTC entre deux clients
+  def relay_rtc_message(sender, recipient, message)
+    if @clients.key?(recipient)
+      @clients[recipient].text(message)
+      return true
+    else
+      return false
+    end
+  end
+
+  # Méthode pour notifier tous les clients d'un appel en cours
+  def broadcast_call_status(caller, callee, call_type, status)
+    status_msg = case status
+      when 'started'
+        "#{caller} a démarré un appel #{call_type == 'video' ? 'vidéo' : 'audio'} avec #{callee}"
+      when 'answered'
+        "#{callee} a répondu à l'appel de #{caller}"
+      when 'declined'
+        "#{callee} a refusé l'appel de #{caller}"
+      when 'ended'
+        "L'appel entre #{caller} et #{callee} est terminé"
+      when 'missed'
+        "#{callee} a manqué un appel de #{caller}"
+      else
+        "État d'appel: #{status}"
+    end
+
+    broadcast_message(status_msg, 'Server')
+  end
+
   def clear_chat(driver)
     driver.text("CLEAR_LOGS|")
   end
