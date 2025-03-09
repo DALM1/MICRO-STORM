@@ -72,7 +72,7 @@ class ChatController
       SQL
       db.close
     rescue => ex
-      puts "Erreur lors de l'initialisation de la base de données: #{ex.message}"
+      puts "Erreur lors de l'initialisation de la base de données #{ex.message}"
     end
   end
 
@@ -116,19 +116,19 @@ class ChatController
       driver.text("Utilisateurs dans ce thread | #{chat_room.list_users}")
 
     when '/info'
-      driver.text("Thread | #{chat_room.name} | creator: #{chat_room.creator} | users: #{chat_room.list_users}")
+      driver.text("Thread | #{chat_room.name} | creator #{chat_room.creator} | users #{chat_room.list_users}")
 
     when '/history'
       chat_room.history.each { |line| driver.text(line) }
 
     when '/banned'
-      driver.text("Bannis: #{chat_room.banned_users.join(', ')}")
+      driver.text("Bannis | #{chat_room.banned_users.join(', ')}")
 
     when '/cr'
       room_name = parts[1]
       room_pass = parts[2]
       if room_name.nil?
-        driver.text("Usage: /cr <nom> <password>")
+        driver.text("Usage /cr <nom> <password>")
         return nil
       end
 
@@ -145,7 +145,7 @@ class ChatController
       room_name = parts[1]
       room_pass = parts[2]
       if room_name.nil?
-        driver.text("Usage: /cd <nom> <password>")
+        driver.text("Usage /cd <nom> <password>")
         return nil
       end
 
@@ -177,7 +177,7 @@ class ChatController
     when '/ban'
       user_to_ban = parts[1]
       if user_to_ban.nil?
-        driver.text("Usage: /ban <pseudo>")
+        driver.text("Usage /ban <pseudo>")
         return nil
       end
       if chat_room.creator == username
@@ -189,7 +189,7 @@ class ChatController
     when '/kick'
       user_to_kick = parts[1]
       if user_to_kick.nil?
-        driver.text("Usage: /kick <pseudo>")
+        driver.text("Usage /kick <pseudo>")
         return nil
       end
       if chat_room.creator == username
@@ -202,7 +202,7 @@ class ChatController
       user_to_dm = parts[1]
       dm_message = parts[2..-1].join(' ')
       if user_to_dm.nil? || dm_message.empty?
-        driver.text("Usage: /dm <pseudo> <message>")
+        driver.text("Usage /dm <pseudo> <message>")
         return nil
       end
       chat_room.direct_message(username, user_to_dm, dm_message)
@@ -217,7 +217,7 @@ class ChatController
     when '/color'
       new_color = parts[1]
       if new_color.nil?
-        driver.text("Usage: /color <couleur> (nom de couleur ou code hexadécimal)")
+        driver.text("Usage /color <couleur> (nom de couleur ou code hexadécimal)")
         return nil
       end
 
@@ -241,7 +241,7 @@ class ChatController
     when '/music'
       music_url = parts[1]
       if music_url.nil?
-        driver.text("Usage: /music <url>")
+        driver.text("Usage /music <url>")
         return nil
       end
 
@@ -275,7 +275,7 @@ class ChatController
     when '/volume'
       volume_level = parts[1]
       if volume_level.nil?
-        driver.text("Usage: /volume <niveau> (0-100)")
+        driver.text("Usage /volume <niveau> (0-100)")
         return nil
       end
 
@@ -296,7 +296,7 @@ class ChatController
     when '/powerto'
       target = parts[1]
       if target.nil?
-        driver.text("Usage: /powerto <pseudo>")
+        driver.text("Usage /powerto <pseudo>")
         return nil
       end
       if chat_room.creator != username
@@ -313,7 +313,7 @@ class ChatController
     when '/typo'
       new_font = parts[1]
       if new_font.nil?
-        driver.text("Usage: /typo <font_family>")
+        driver.text("Usage /typo <font_family>")
         return nil
       end
       special_msg = "CHANGE_FONT|#{new_font}"
@@ -324,7 +324,7 @@ class ChatController
     when '/textcolor'
       new_txt_color = parts[1]
       if new_txt_color.nil?
-        driver.text("Usage: /textcolor <couleur> (nom de couleur ou code hexadécimal)")
+        driver.text("Usage /textcolor <couleur> (nom de couleur ou code hexadécimal)")
         return nil
       end
 
@@ -342,7 +342,7 @@ class ChatController
       pass  = parts[2]
       new_user = parts[3]
       if email.nil? || pass.nil? || new_user.nil?
-        driver.text("Usage: /register <email> <password> <pseudo>")
+        driver.text("Usage /register <email> <password> <pseudo>")
         return nil
       end
       register_result = register_account(email, pass, new_user)
@@ -352,7 +352,7 @@ class ChatController
       email = parts[1]
       pass  = parts[2]
       if email.nil? || pass.nil?
-        driver.text("Usage: /login <email> <password>")
+        driver.text("Usage /login <email> <password>")
         return nil
       end
       login_result = login_account(email, pass)
