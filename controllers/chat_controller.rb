@@ -5,6 +5,44 @@ require_relative '../models/chat_room'
 class ChatController
   attr_accessor :chat_rooms
 
+  COLOR_NAMES = {
+    "red" => "#FF0000",
+    "green" => "#008000",
+    "blue" => "#0000FF",
+    "yellow" => "#FFFF00",
+    "orange" => "#FFA500",
+    "purple" => "#800080",
+    "pink" => "#FFC0CB",
+    "black" => "#000000",
+    "white" => "#FFFFFF",
+    "gray" => "#808080",
+    "grey" => "#808080",
+    "brown" => "#A52A2A",
+    "cyan" => "#00FFFF",
+    "magenta" => "#FF00FF",
+    "lime" => "#00FF00",
+    "navy" => "#000080",
+    "teal" => "#008080",
+    "olive" => "#808000",
+    "maroon" => "#800000",
+    "silver" => "#C0C0C0",
+    "gold" => "#FFD700",
+    "indigo" => "#4B0082",
+    "violet" => "#EE82EE",
+    "turquoise" => "#40E0D0",
+    "crimson" => "#DC143C",
+    "salmon" => "#FA8072",
+    "coral" => "#FF7F50",
+    "tomato" => "#FF6347",
+    "skyblue" => "#87CEEB",
+    "steelblue" => "#4682B4",
+    "royalblue" => "#4169E1",
+    "darkgreen" => "#006400",
+    "forestgreen" => "#228B22",
+    "seagreen" => "#2E8B57",
+    "darkred" => "#8B0000"
+  }
+
   def initialize
     @chat_rooms = {}
     setup_database
@@ -19,6 +57,17 @@ class ChatController
           email TEXT UNIQUE NOT NULL,
           username TEXT UNIQUE NOT NULL,
           password_digest TEXT NOT NULL
+        );
+      SQL
+
+      db.execute <<-SQL
+        CREATE TABLE IF NOT EXISTS user_preferences (
+          user_id INTEGER PRIMARY KEY,
+          text_color TEXT,
+          background_url TEXT,
+          font_family TEXT,
+          color TEXT,
+          FOREIGN KEY (user_id) REFERENCES users(id)
         );
       SQL
       db.close
@@ -41,6 +90,18 @@ class ChatController
     end
   end
 
+  def convert_color(color_input)
+    return color_input if color_input.start_with?('#')
+
+    color_name = color_input.downcase
+
+    if COLOR_NAMES.key?(color_name)
+      return COLOR_NAMES[color_name]
+    end
+
+    return color_input
+  end
+
   def handle_command(msg, driver, chat_room, username)
     parts   = msg.split(' ')
     command = parts[0].downcase
@@ -49,6 +110,7 @@ class ChatController
     case command
     when '/help'
       driver.text(chat_room.commands)
+      driver.text("Pour les commandes /color et /textcolor, vous pouvez utiliser les noms de couleurs (ex: /color red) ou les codes hexadécimaux (ex: /color #FF0000).")
 
     when '/list'
       driver.text("Utilisateurs dans ce thread | #{chat_room.list_users}")
@@ -155,11 +217,16 @@ class ChatController
     when '/color'
       new_color = parts[1]
       if new_color.nil?
-        driver.text("Usage: /color <couleur>")
+        driver.text("Usage: /color <couleur> (nom de couleur ou code hexadécimal)")
         return nil
       end
-      chat_room.set_color(username, new_color)
-      driver.text("Votre couleur est maintenant #{new_color}")
+
+      hex_color = convert_color(new_color)
+
+      chat_room.set_color(username, hex_color)
+      driver.text("Votre couleur est maintenant #{new_color} (#{hex_color})")
+
+      save_user_preference(username, 'color', hex_color)
 
     when '/background'
       bg_url = parts[1]
@@ -168,6 +235,63 @@ class ChatController
         return nil
       end
       chat_room.broadcast_background(bg_url)
+
+      save_user_preference(username, 'background_url', bg_url)
+
+    when '/music'
+      music_url = parts[1]
+      if music_url.nil?
+        driver.text("Usage: /music <url>")
+        return nil
+      end
+
+      if chat_room.password.nil?
+        driver.text("⚠️ La musique ne peut être utilisée que dans les threads privés")
+        return nil
+      end
+
+      chat_room.broadcast_message("#{username} a partagé de la musique [/playmusic pour écouter]", 'Server')
+
+      chat_room.current_music_url = music_url
+      chat_room.current_music_user = username
+
+      driver.text("Musique partagée. Les utilisateurs peuvent l'écouter avec /playmusic")
+
+    when '/playmusic'
+      if !chat_room.respond_to?(:current_music_url) || chat_room.current_music_url.nil?
+        driver.text("⚠️ Aucune musique n'a été partagée dans ce thread")
+        return nil
+      end
+
+      special_msg = "PLAY_MUSIC|#{chat_room.current_music_url}"
+      driver.special(special_msg)
+      driver.text("Lecture de la musique partagée par #{chat_room.current_music_user}")
+
+    when '/stopmusic'
+      special_msg = "STOP_MUSIC|"
+      driver.special(special_msg)
+      driver.text("Lecture de la musique arrêtée")
+
+    when '/volume'
+      volume_level = parts[1]
+      if volume_level.nil?
+        driver.text("Usage: /volume <niveau> (0-100)")
+        return nil
+      end
+
+      begin
+        volume = Integer(volume_level)
+        if volume < 0 || volume > 100
+          driver.text("⚠️ Le volume doit être entre 0 et 100")
+          return nil
+        end
+
+        special_msg = "SET_VOLUME|#{volume}"
+        driver.special(special_msg)
+        driver.text("Volume réglé à #{volume}%")
+      rescue ArgumentError
+        driver.text("⚠️ Le volume doit être un nombre entre 0 et 100")
+      end
 
     when '/powerto'
       target = parts[1]
@@ -195,14 +319,23 @@ class ChatController
       special_msg = "CHANGE_FONT|#{new_font}"
       chat_room.broadcast_special(special_msg)
 
+      save_user_preference(username, 'font_family', new_font)
+
     when '/textcolor'
       new_txt_color = parts[1]
       if new_txt_color.nil?
-        driver.text("Usage: /textcolor <couleur>")
+        driver.text("Usage: /textcolor <couleur> (nom de couleur ou code hexadécimal)")
         return nil
       end
-      special_msg = "CHANGE_TEXTCOLOR|#{new_txt_color}"
+
+      hex_color = convert_color(new_txt_color)
+
+      special_msg = "CHANGE_TEXTCOLOR|#{hex_color}"
       chat_room.broadcast_special(special_msg)
+
+      driver.text("Couleur du texte changée en #{new_txt_color} (#{hex_color})")
+
+      save_user_preference(username, 'text_color', hex_color)
 
     when '/register'
       email = parts[1]
@@ -228,11 +361,13 @@ class ChatController
 
         chat_room.remove_client(username)
 
-        chat_room.add_client(driver, new_pseudo)
+        chat_room.add_client(driver, username)
 
         if username.is_a?(String) && username.respond_to?(:replace)
           username.replace(new_pseudo)
         end
+
+        apply_user_preferences(driver, chat_room, new_pseudo)
       end
       driver.text(login_result)
 
@@ -241,6 +376,15 @@ class ChatController
       chat_room.broadcast_special("CLEAR_LOGS|")
       driver.text("|| Logs cleared.")
       driver.text("|| ⚠️ Connected to WS server")
+
+    when '/savepref'
+      driver.text("Sauvegarde de vos préférences en cours...")
+      save_all_preferences(username, chat_room)
+      driver.text("Préférences sauvegardées avec succès!")
+
+    when '/listcolors'
+      color_list = COLOR_NAMES.keys.sort.join(", ")
+      driver.text("Noms de couleurs disponibles: #{color_list}")
 
     else
       driver.text("⚠️ Commande inconnue. Tapez /help pour la liste")
@@ -262,6 +406,8 @@ class ChatController
     begin
       db = db_connection
       db.execute("INSERT INTO users (email, username, password_digest) VALUES (?, ?, ?)", [email, user, pd])
+      user_id = db.last_insert_row_id
+      db.execute("INSERT INTO user_preferences (user_id) VALUES (?)", [user_id])
       db.close
       "| User registered"
     rescue SQLite3::ConstraintException => e
@@ -290,6 +436,92 @@ class ChatController
       end
     rescue => ex
       "| Error #{ex.message}"
+    end
+  end
+
+  def get_user_id(username)
+    begin
+      db = db_connection
+      result = db.execute("SELECT id FROM users WHERE username=?", [username])
+      db.close
+      return result.empty? ? nil : result[0][0]
+    rescue => ex
+      puts "Erreur lors de la récupération de l'ID utilisateur: #{ex.message}"
+      return nil
+    end
+  end
+
+  def save_user_preference(username, preference_key, preference_value)
+    user_id = get_user_id(username)
+    return false unless user_id
+
+    begin
+      db = db_connection
+      result = db.execute("SELECT user_id FROM user_preferences WHERE user_id=?", [user_id])
+
+      if result.empty?
+        db.execute("INSERT INTO user_preferences (user_id, #{preference_key}) VALUES (?, ?)",
+                  [user_id, preference_value])
+      else
+        db.execute("UPDATE user_preferences SET #{preference_key}=? WHERE user_id=?",
+                  [preference_value, user_id])
+      end
+      db.close
+      return true
+    rescue => ex
+      puts "Erreur lors de la sauvegarde des préférences: #{ex.message}"
+      return false
+    end
+  end
+
+  def save_all_preferences(username, chat_room)
+    user_color = chat_room.get_user_color(username)
+
+    save_user_preference(username, 'color', user_color) if user_color
+  end
+
+  def apply_user_preferences(driver, chat_room, username)
+    user_id = get_user_id(username)
+    return unless user_id
+
+    begin
+      db = db_connection
+      result = db.execute("SELECT text_color, background_url, font_family, color FROM user_preferences WHERE user_id=?", [user_id])
+      db.close
+
+      if !result.empty?
+        prefs = result[0]
+        text_color = prefs[0]
+        bg_url = prefs[1]
+        font = prefs[2]
+        color = prefs[3]
+
+        if text_color
+          special_msg = "CHANGE_TEXTCOLOR|#{text_color}"
+          chat_room.broadcast_special(special_msg)
+          driver.text("Couleur de texte restaurée: #{text_color}")
+        end
+
+        if bg_url
+          chat_room.broadcast_background(bg_url)
+          driver.text("Arrière-plan restauré")
+        end
+
+        if font
+          special_msg = "CHANGE_FONT|#{font}"
+          chat_room.broadcast_special(special_msg)
+          driver.text("Police restaurée: #{font}")
+        end
+
+        if color
+          chat_room.set_color(username, color)
+          driver.text("Couleur de pseudo restaurée: #{color}")
+        end
+
+        driver.text("| Préférences utilisateur restaurées")
+      end
+    rescue => ex
+      puts "Erreur lors de l'application des préférences: #{ex.message}"
     end
   end
 end
