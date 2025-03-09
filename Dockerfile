@@ -1,11 +1,12 @@
 FROM ruby:3.2
 
 WORKDIR /app
-COPY . /app
-RUN gem install bundler
+COPY Gemfile Gemfile.lock* /app/
 RUN bundle install
+COPY . /app
 RUN mkdir -p /app/public/uploads
 RUN chmod 755 /app/public/uploads
+
 EXPOSE 3630
 EXPOSE 4567
 

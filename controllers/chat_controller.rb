@@ -540,7 +540,7 @@ class ChatController
         driver.text("| ⚪️ Préférences utilisateur restaurées")
       end
     rescue => ex
-      puts "Erreur lors de l'application des préférences #{ex.message}"
+      puts "| 🔴 Erreur lors de l'application des préférences #{ex.message}"
     end
   end
 end
