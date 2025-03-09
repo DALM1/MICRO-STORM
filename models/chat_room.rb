@@ -124,7 +124,8 @@ class ChatRoom
       "/stopmusic                   - Arrêter la lecture de la musique",
       "/volume <niveau>             - Régler le volume (0-100)",
       "/image <url>                 - Partager une image via son URL",
-      "/upload                      - Envoyer un fichier (image, document)",
+      "/file <url> [nom]            - Partager un fichier via son URL",
+      "/upload                      - Envoyer un fichier (tout format)",
       "/powerto <pseudo>            - Donner le rôle de créateur",
       "/typo <font_family>          - Changer la police de tout le chat",
       "/textcolor <couleur>         - Changer la couleur de tout le texte",
@@ -149,7 +150,7 @@ class ChatRoom
     text = text.gsub(%r{(https?://\S+\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?\S*)?)}i) do |url|
       unless processed_urls[url]
         processed_urls[url] = true
-        %Q{<a href="#{url}" target="_blank">#{url}</a><br>
+        %Q{<a href="#{url}" target="_blank" rel="noopener noreferrer">#{url}</a><br>
            <img src="#{url}" alt="image" style="max-width: 300px; max-height: 200px;">}
       else
         url
@@ -160,7 +161,7 @@ class ChatRoom
       unless processed_urls[url]
         processed_urls[url] = true
         video_id = $2
-        %Q{<a href="#{url}" target="_blank">#{url}</a><br>
+        %Q{<a href="#{url}" target="_blank" rel="noopener noreferrer">#{url}</a><br>
            <iframe width="300" height="169" src="https://www.youtube.com/embed/#{video_id}"
            frameborder="0" allowfullscreen></iframe>}
       else
@@ -172,7 +173,7 @@ class ChatRoom
       unless processed_urls[url]
         processed_urls[url] = true
         video_id = $2
-        %Q{<a href="#{url}" target="_blank">#{url}</a><br>
+        %Q{<a href="#{url}" target="_blank" rel="noopener noreferrer">#{url}</a><br>
            <iframe width="300" height="169" src="https://www.youtube.com/embed/#{video_id}"
            frameborder="0" allowfullscreen></iframe>}
       else
@@ -184,7 +185,7 @@ class ChatRoom
       unless processed_urls[url]
         processed_urls[url] = true
         escaped_url = url.gsub('"', '%22')
-        %Q{<a href="#{url}" target="_blank">#{url}</a><br>
+        %Q{<a href="#{url}" target="_blank" rel="noopener noreferrer">#{url}</a><br>
            <iframe width="300" height="166" scrolling="no" frameborder="no"
            src="https://w.soundcloud.com/player/?url=#{escaped_url}"></iframe>}
       else
@@ -195,7 +196,7 @@ class ChatRoom
     text = text.gsub(%r{(https?://[^\s"<>]+)}i) do |url|
       if !processed_urls[url] && !url.include?('<a href=')
         processed_urls[url] = true
-        %Q{<a href="#{url}" target="_blank">#{url}</a><br>
+        %Q{<a href="#{url}" target="_blank" rel="noopener noreferrer">#{url}</a><br>
            <div class="link-preview" style="border: 1px solid #555; padding: 8px;
            margin: 5px 0; border-radius: 5px; background-color: rgba(0,0,0,0.3);">
              <div class="preview-title" style="font-weight: bold;">Aperçu de lien</div>

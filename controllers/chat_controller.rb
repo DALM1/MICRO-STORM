@@ -307,8 +307,35 @@ class ChatController
 
       chat_room.broadcast_message("<img src=\"#{image_url}\" alt=\"image\" style=\"max-width: 500px; max-height: 400px;\">", username)
 
+    when '/file'
+      file_url = parts[1]
+      file_name = parts[2] || "fichier partagé"
+      if file_url.nil?
+        driver.text("Usage: /file <url> [nom_du_fichier]")
+        return nil
+      end
+
+      unless file_url =~ /\A(http|https):\/\/[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/ix
+        driver.text("⚠️ Format d'URL invalide. Utilisez une URL complète")
+        return nil
+      end
+
+      extension = File.extname(file_url).downcase
+      icon = case extension
+        when '.pdf' then '📄'
+        when '.doc', '.docx' then '📝'
+        when '.xls', '.xlsx' then '📊'
+        when '.ppt', '.pptx' then '📑'
+        when '.zip', '.rar', '.tar', '.gz' then '🗜️'
+        when '.mp3', '.wav', '.ogg' then '🎵'
+        when '.mp4', '.avi', '.mov', '.wmv' then '🎬'
+        else '📁'
+      end
+
+      chat_room.broadcast_message("#{icon} <a href=\"#{file_url}\" target=\"_blank\" class=\"file-link\">#{file_name}</a>", username)
+
     when '/upload'
-      driver.text("| 📁 Demande d'upload de fichier...")
+      driver.text("| 📤 Demande d'upload de fichier...")
       special_msg = "REQUEST_FILE_UPLOAD|"
       driver.special(special_msg)
 
@@ -449,7 +476,7 @@ class ChatController
       username = user_data[2]
 
       if BCrypt::Password.new(password_digest) == password
-        "| Logged in as #{username}"
+        "| Logged in as #{username}."
       else
         "| Invalid password"
       end
@@ -540,7 +567,7 @@ class ChatController
         driver.text("| ⚪️ Préférences utilisateur restaurées")
       end
     rescue => ex
-      puts "| 🔴 Erreur lors de l'application des préférences #{ex.message}"
+      puts "Erreur lors de l'application des préférences #{ex.message}"
     end
   end
 end
