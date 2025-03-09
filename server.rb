@@ -80,6 +80,10 @@ loop do
         socket.close
       end
 
+      driver.on(:error) do |error|
+        puts "🔴 Erreur WS #{error.message}".red
+      end
+
       while (data = socket.readpartial(1024))
         driver.parse(data)
       end
@@ -87,7 +91,7 @@ loop do
     rescue EOFError
       puts "🔴 Connection fermée (EOF)".red
     rescue => e
-      puts "⚠️ Erreur: #{e.message}".red
+      puts "⚠️ Erreur #{e.message}".red
       puts e.backtrace.join("\n").yellow
     ensure
       socket.close unless socket.closed?

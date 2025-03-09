@@ -93,7 +93,7 @@ class ChatRoom
   def broadcast_special(msg)
     @clients.each_value do |driver|
       begin
-        driver.special(msg)
+        driver.special(msg)  # Utiliser special au lieu de text
       rescue IOError => e
         puts "⚠️ #{e.message}".yellow
       end
@@ -142,16 +142,101 @@ class ChatRoom
   private
 
   def linkify(text)
-    text = text.gsub(%r{(https?://\S+\.(jpg|jpeg|png|gif|webp)(\?\S*)?)}) do |url|
-      %Q{<a href="#{url}" target="_blank">#{url}</a><br><img src="#{url}" alt="image" style="max-width: 300px; max-height: 200px;">}
-    end
+    processed_urls = {}
 
-    text.gsub(%r{(https?://\S+)}) do |url|
-      if url.include?('<a href=')
-        url
+    text = text.gsub(%r{(https?://\S+\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?\S*)?)}i) do |url|
+      unless processed_urls[url]
+        processed_urls[url] = true
+        %Q{<a href="#{url}" target="_blank">#{url}</a><br>
+           <img src="#{url}" alt="image" style="max-width: 300px; max-height: 200px;">}
       else
-        %Q{<a href="#{url}" target="_blank">#{url}</a>}
+        url
       end
     end
+
+    text = text.gsub(%r{(https?://(?:www\.)?youtube\.com/watch\?v=([a-zA-Z0-9_-]{11}))}i) do |url|
+      unless processed_urls[url]
+        processed_urls[url] = true
+        video_id = $2
+        %Q{<a href="#{url}" target="_blank">#{url}</a><br>
+           <iframe width="300" height="169" src="https://www.youtube.com/embed/#{video_id}"
+           frameborder="0" allowfullscreen></iframe>}
+      else
+        url
+      end
+    end
+
+    text = text.gsub(%r{(https?://youtu\.be/([a-zA-Z0-9_-]{11}))}i) do |url|
+      unless processed_urls[url]
+        processed_urls[url] = true
+        video_id = $2
+        %Q{<a href="#{url}" target="_blank">#{url}</a><br>
+           <iframe width="300" height="169" src="https://www.youtube.com/embed/#{video_id}"
+           frameborder="0" allowfullscreen></iframe>}
+      else
+        url
+      end
+    end
+
+    text = text.gsub(%r{(https?://(?:www\.)?(?:twitter\.com|x\.com)/\w+/status/\d+)}i) do |url|
+      unless processed_urls[url]
+        processed_urls[url] = true
+        %Q{<a href="#{url}" target="_blank">#{url}</a><br>
+           <iframe src="#{url}" width="300" height="300"
+           style="border: none; overflow: hidden;" scrolling="no" frameborder="0" allowtransparency="true"></iframe>}
+      else
+        url
+      end
+    end
+
+    text = text.gsub(%r{(https?://(?:www\.)?vimeo\.com/(\d+))}i) do |url|
+      unless processed_urls[url]
+        processed_urls[url] = true
+        video_id = $2
+        %Q{<a href="#{url}" target="_blank">#{url}</a><br>
+           <iframe src="https://player.vimeo.com/video/#{video_id}" width="300" height="169"
+           frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>}
+      else
+        url
+      end
+    end
+
+    text = text.gsub(%r{(https?://(?:www\.)?imgur\.com/(\w+))}i) do |url|
+      unless processed_urls[url]
+        processed_urls[url] = true
+        img_id = $2
+        %Q{<a href="#{url}" target="_blank">#{url}</a><br>
+           <img src="https://i.imgur.com/#{img_id}.jpg" alt="imgur" style="max-width: 300px; max-height: 200px;">}
+      else
+        url
+      end
+    end
+
+    text = text.gsub(%r{(https?://(?:www\.)?soundcloud\.com/\S+)}i) do |url|
+      unless processed_urls[url]
+        processed_urls[url] = true
+        %Q{<a href="#{url}" target="_blank">#{url}</a><br>
+           <iframe width="300" height="166" scrolling="no" frameborder="no"
+           src="https://w.soundcloud.com/player/?url=#{url}"></iframe>}
+      else
+        url
+      end
+    end
+
+    text = text.gsub(%r{(https?://\S+)}i) do |url|
+      if !processed_urls[url] && !url.include?('<a href=')
+        processed_urls[url] = true
+        %Q{<a href="#{url}" target="_blank">#{url}</a><br>
+           <div class="link-preview" style="border: 1px solid #ccc; padding: 10px;
+           margin: 5px 0; border-radius: 5px; background-color: rgba(0,0,0,0.3);">
+             <div class="preview-title" style="font-weight: bold;">Aperçu: #{url}</div>
+             <div class="preview-content">Cliquez pour ouvrir le lien</div>
+           </div>}
+      else
+        url
+      end
+    end
+
+    text
   end
 end
