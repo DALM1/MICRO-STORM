@@ -231,7 +231,7 @@ class ChatController
     when '/background'
       bg_url = parts[1]
       if bg_url.nil?
-        driver.text("Usage: /background <url>")
+        driver.text("Usage /background <url>")
         return nil
       end
       chat_room.broadcast_background(bg_url)
@@ -255,7 +255,7 @@ class ChatController
       chat_room.current_music_url = music_url
       chat_room.current_music_user = username
 
-      driver.text("Musique partagée. Les utilisateurs peuvent l'écouter avec /playmusic")
+      driver.text("🎵 Musique partagée. Les utilisateurs peuvent l'écouter avec /playmusic")
 
     when '/playmusic'
       if !chat_room.respond_to?(:current_music_url) || chat_room.current_music_url.nil?
@@ -265,12 +265,12 @@ class ChatController
 
       special_msg = "PLAY_MUSIC|#{chat_room.current_music_url}"
       driver.special(special_msg)
-      driver.text("Lecture de la musique partagée par #{chat_room.current_music_user}")
+      driver.text("🎵 Lecture de la musique partagée par #{chat_room.current_music_user}")
 
     when '/stopmusic'
       special_msg = "STOP_MUSIC|"
       driver.special(special_msg)
-      driver.text("Lecture de la musique arrêtée")
+      driver.text("🎵 Lecture de la musique arrêtée")
 
     when '/volume'
       volume_level = parts[1]
@@ -333,7 +333,7 @@ class ChatController
       special_msg = "CHANGE_TEXTCOLOR|#{hex_color}"
       chat_room.broadcast_special(special_msg)
 
-      driver.text("Couleur du texte changée en #{new_txt_color} (#{hex_color})")
+      driver.text("| Couleur du texte changée en #{new_txt_color} (#{hex_color})")
 
       save_user_preference(username, 'text_color', hex_color)
 
@@ -378,13 +378,13 @@ class ChatController
       driver.text("|| ⚠️ Connected to WS server")
 
     when '/savepref'
-      driver.text("Sauvegarde de vos préférences en cours...")
+      driver.text("| Sauvegarde de vos préférences en cours...")
       save_all_preferences(username, chat_room)
-      driver.text("Préférences sauvegardées avec succès!")
+      driver.text("| Préférences sauvegardées avec succès")
 
     when '/listcolors'
       color_list = COLOR_NAMES.keys.sort.join(", ")
-      driver.text("Noms de couleurs disponibles: #{color_list}")
+      driver.text("| Noms de couleurs disponibles #{color_list}")
 
     else
       driver.text("⚠️ Commande inconnue. Tapez /help pour la liste")
@@ -430,7 +430,7 @@ class ChatController
       username = user_data[2]
 
       if BCrypt::Password.new(password_digest) == password
-        "| Logged in as #{username}"
+        "| Logged in as #{username}."
       else
         "| Invalid password"
       end
@@ -469,7 +469,7 @@ class ChatController
       db.close
       return true
     rescue => ex
-      puts "Erreur lors de la sauvegarde des préférences: #{ex.message}"
+      puts "| 🔴 Erreur lors de la sauvegarde des préférences: #{ex.message}"
       return false
     end
   end
