@@ -116,7 +116,7 @@ class ChatController
       driver.text("Utilisateurs dans ce thread | #{chat_room.list_users}")
 
     when '/info'
-      driver.text("Thread | #{chat_room.name} | creator #{chat_room.creator} | users #{chat_room.list_users}")
+      driver.text("Thread | #{chat_room.name} | creator | #{chat_room.creator} | users | #{chat_room.list_users}")
 
     when '/history'
       chat_room.history.each { |line| driver.text(line) }
@@ -499,29 +499,29 @@ class ChatController
         if text_color
           special_msg = "CHANGE_TEXTCOLOR|#{text_color}"
           chat_room.broadcast_special(special_msg)
-          driver.text("Couleur de texte restaurée: #{text_color}")
+          driver.text("|⚪️ Couleur de texte restaurée #{text_color}")
         end
 
         if bg_url
           chat_room.broadcast_background(bg_url)
-          driver.text("Arrière-plan restauré")
+          driver.text("|⚪️ Arrière-plan restauré")
         end
 
         if font
           special_msg = "CHANGE_FONT|#{font}"
           chat_room.broadcast_special(special_msg)
-          driver.text("Police restaurée: #{font}")
+          driver.text("|⚪️ Police de text restaurée #{font}")
         end
 
         if color
           chat_room.set_color(username, color)
-          driver.text("Couleur de pseudo restaurée: #{color}")
+          driver.text("|⚪️ Couleur de pseudo restaurée #{color}")
         end
 
-        driver.text("| Préférences utilisateur restaurées")
+        driver.text("|⚪️ Préférences utilisateur restaurées")
       end
     rescue => ex
-      puts "Erreur lors de l'application des préférences: #{ex.message}"
+      puts "Erreur lors de l'application des préférences #{ex.message}"
     end
   end
 end
