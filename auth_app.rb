@@ -1,31 +1,26 @@
 require 'sinatra'
-require 'pg'
+require 'sqlite3'
 require 'bcrypt'
 
 set :bind, '0.0.0.0'
 set :port, 4567
 
+DB_FILE = "auth.db"
+
 def db_connection
-  PG.connect(
-    dbname: ENV['DB_NAME'],
-    user: ENV['DB_USER'],
-    password: ENV['DB_PASS'],
-    host: ENV['DB_HOST']
-  )
+  SQLite3::Database.new(DB_FILE)
 end
 
-begin
-  c = db_connection
-  c.exec("CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
+db = db_connection
+db.execute <<-SQL
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE NOT NULL,
     username TEXT UNIQUE NOT NULL,
     password_digest TEXT NOT NULL
-  )")
-  c.close
-rescue => e
-  puts "Erreur lors de la création de la table users: #{e.message}"
-end
+  );
+SQL
+db.close
 
 post '/register' do
   e = params[:email].to_s.strip
@@ -36,12 +31,12 @@ post '/register' do
 
   pd = BCrypt::Password.create(p1)
   begin
-    c = db_connection
-    c.exec_params("INSERT INTO users (email, username, password_digest) VALUES ($1, $2, $3)", [e, u, pd])
-    c.close
+    db = db_connection
+    db.execute("INSERT INTO users (email, username, password_digest) VALUES (?, ?, ?)", [e, u, pd])
+    db.close
     "| User registered"
-  rescue PG::UniqueViolation
-    "| Email or username used"
+  rescue SQLite3::ConstraintException
+    "| Email or username already used"
   rescue => ex
     "| Error register: #{ex.message}"
   end
@@ -54,15 +49,13 @@ post '/login' do
   return "| Missing fields" if e.empty? || p1.empty?
 
   begin
-    c = db_connection
-    r = c.exec_params("SELECT * FROM users WHERE email=$1", [e])
-    c.close
+    db = db_connection
+    r = db.execute("SELECT username, password_digest FROM users WHERE email = ?", [e])
+    db.close
 
-    return "| No account" if r.ntuples == 0
+    return "| No account" if r.empty?
 
-    d = r[0]['password_digest']
-    u = r[0]['username']
-
+    u, d = r.first
     if BCrypt::Password.new(d) == p1
       "| Logged in as #{u}"
     else
